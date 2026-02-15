@@ -15,10 +15,10 @@ export const testPixelParitySchema = {
 // WebGL: gl.readPixels (bottom-up, flipped to top-down)
 // WebGPU: canvas 2D getImageData fallback (already top-down)
 const CAPTURE_PIXELS_FN = `
-function capturePixels() {
+function capturePixels(globals) {
   var w = window;
-  var renderer = w.__shadeCanvasRenderer;
-  var pipeline = w.__shadeRenderingPipeline;
+  var renderer = w[globals.canvasRenderer];
+  var pipeline = w[globals.renderingPipeline];
   if (!renderer) return null;
 
   renderer.render(0);
@@ -72,13 +72,16 @@ export async function testPixelParity(
   }, { timeout: 30000 })
 
   // Pause and render at time=0
-  await session.page!.evaluate(() => {
+  await session.page!.evaluate((globals) => {
     const w = window as any
-    if (w.__shadeSetPaused) w.__shadeSetPaused(true)
-    if (w.__shadeSetPausedTime) w.__shadeSetPausedTime(0)
-  })
+    if (w[globals.setPaused]) w[globals.setPaused](true)
+    if (w[globals.setPausedTime]) w[globals.setPausedTime](0)
+  }, session.globals)
 
-  const glslPixels = await session.page!.evaluate(new Function(CAPTURE_PIXELS_FN + 'return capturePixels();') as () => any)
+  const glslPixels = await session.page!.evaluate(
+    new Function('globals', CAPTURE_PIXELS_FN + 'return capturePixels(globals);') as (g: any) => any,
+    session.globals
+  )
 
   if (!glslPixels) {
     return { status: 'error', maxDiff: 0, meanDiff: 0, mismatchCount: 0, mismatchPercent: 0, resolution: [0, 0], details: 'Failed to capture WebGL2' }
@@ -87,18 +90,21 @@ export async function testPixelParity(
   // Switch to WebGPU and capture
   await session.setBackend('webgpu')
 
-  await session.page!.evaluate(() => {
+  await session.page!.evaluate((globals) => {
     const w = window as any
-    if (w.__shadeSetPausedTime) w.__shadeSetPausedTime(0)
-  })
+    if (w[globals.setPausedTime]) w[globals.setPausedTime](0)
+  }, session.globals)
 
-  const wgslPixels = await session.page!.evaluate(new Function(CAPTURE_PIXELS_FN + 'return capturePixels();') as () => any)
+  const wgslPixels = await session.page!.evaluate(
+    new Function('globals', CAPTURE_PIXELS_FN + 'return capturePixels(globals);') as (g: any) => any,
+    session.globals
+  )
 
   // Resume
-  await session.page!.evaluate(() => {
+  await session.page!.evaluate((globals) => {
     const w = window as any
-    if (w.__shadeSetPaused) w.__shadeSetPaused(false)
-  })
+    if (w[globals.setPaused]) w[globals.setPaused](false)
+  }, session.globals)
 
   if (!wgslPixels) {
     return { status: 'error', maxDiff: 0, meanDiff: 0, mismatchCount: 0, mismatchPercent: 0, resolution: [glslPixels.width, glslPixels.height], details: 'Failed to capture WebGPU' }

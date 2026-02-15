@@ -29,21 +29,21 @@ export async function testUniformResponsiveness(
     }, { timeout: 30000 })
 
     // Pause animation for deterministic testing
-    await page.evaluate(() => {
+    await page.evaluate((globals) => {
       const w = window as any
-      if (w.__shadeSetPaused) w.__shadeSetPaused(true)
-      if (w.__shadeSetPausedTime) w.__shadeSetPausedTime(0)
-    })
+      if (w[globals.setPaused]) w[globals.setPaused](true)
+      if (w[globals.setPausedTime]) w[globals.setPausedTime](0)
+    }, session.globals)
 
-    const result = await page.evaluate(() => {
+    const result = await page.evaluate((globals) => {
       const w = window as any
-      const pipeline = w.__shadeRenderingPipeline
-      const effect = w.__shadeCurrentEffect
+      const pipeline = w[globals.renderingPipeline]
+      const effect = w[globals.currentEffect]
       if (!pipeline || !effect?.instance?.globals) {
         return { status: 'error', tested_uniforms: [], details: 'No effect loaded' }
       }
 
-      const renderer = w.__shadeCanvasRenderer
+      const renderer = w[globals.canvasRenderer]
       const gl = pipeline.backend?.gl
 
       function captureMetrics() {
@@ -65,11 +65,11 @@ export async function testUniformResponsiveness(
       const baseline = captureMetrics()
       if (!baseline) return { status: 'error', tested_uniforms: [], details: 'Failed to capture baseline' }
 
-      const globals = effect.instance.globals
+      const effectGlobals = effect.instance.globals
       const tested: string[] = []
       let anyResponded = false
 
-      for (const [name, spec] of Object.entries(globals) as any[]) {
+      for (const [name, spec] of Object.entries(effectGlobals) as any[]) {
         if (!spec.uniform) continue
         if (spec.type === 'boolean' || spec.type === 'button') continue
         if (typeof spec.min !== 'number' || typeof spec.max !== 'number' || spec.min === spec.max) continue
@@ -113,13 +113,13 @@ export async function testUniformResponsiveness(
         tested_uniforms: tested,
         details: anyResponded ? 'Uniforms affect output' : (tested.length === 0 ? 'No testable uniforms' : 'No uniforms affected output')
       }
-    })
+    }, session.globals)
 
     // Resume animation
-    await page.evaluate(() => {
+    await page.evaluate((globals) => {
       const w = window as any
-      if (w.__shadeSetPaused) w.__shadeSetPaused(false)
-    })
+      if (w[globals.setPaused]) w[globals.setPaused](false)
+    }, session.globals)
 
     return result
   })

@@ -30,13 +30,13 @@ export async function testNoPassthrough(
     }, { timeout: 30000 })
 
     // Check if filter effect and test passthrough
-    const result = await page.evaluate(() => {
+    const result = await page.evaluate((globals) => {
       const w = window as any
-      const pipeline = w.__shadeRenderingPipeline
-      const effect = w.__shadeCurrentEffect
+      const pipeline = w[globals.renderingPipeline]
+      const effect = w[globals.currentEffect]
       if (!pipeline || !effect) return { status: 'error', isFilterEffect: false, similarity: null, details: 'No effect loaded' }
 
-      const renderer = w.__shadeCanvasRenderer
+      const renderer = w[globals.canvasRenderer]
       const gl = pipeline.backend?.gl
       if (!renderer || !gl) return { status: 'error', isFilterEffect: false, similarity: null, details: 'No GL context' }
 
@@ -90,7 +90,7 @@ export async function testNoPassthrough(
         uniqueColors,
         details: isModifying ? 'Effect modifies input' : 'Effect may be passing through unchanged'
       }
-    })
+    }, session.globals)
 
     return result
   })

@@ -37,34 +37,34 @@ export async function renderEffectFrame(
 
     // Apply uniforms
     if (options.uniforms) {
-      await page.evaluate((unis) => {
-        const pipeline = (window as any).__shadeRenderingPipeline
+      await page.evaluate(({ unis, globals }) => {
+        const pipeline = (window as any)[globals.renderingPipeline]
         if (!pipeline) return
         for (const [k, v] of Object.entries(unis)) {
           if (pipeline.setUniform) pipeline.setUniform(k, v)
           else if (pipeline.globalUniforms) pipeline.globalUniforms[k] = v
         }
-      }, options.uniforms)
+      }, { unis: options.uniforms, globals: session.globals })
     }
 
     // Wait for warmup frames
     const warmup = options.warmupFrames ?? 10
-    await page.evaluate((frames) => {
+    await page.evaluate(({ frames, globals }) => {
       return new Promise<void>((resolve) => {
-        const start = (window as any).__shadeFrameCount || 0
+        const start = (window as any)[globals.frameCount] || 0
         const poll = () => {
-          const current = (window as any).__shadeFrameCount || 0
+          const current = (window as any)[globals.frameCount] || 0
           if (current - start >= frames) resolve()
           else requestAnimationFrame(poll)
         }
         poll()
       })
-    }, warmup)
+    }, { frames: warmup, globals: session.globals })
 
     // Read pixels and compute metrics
-    const result = await page.evaluate((captureImage) => {
-      const renderer = (window as any).__shadeCanvasRenderer
-      const pipeline = (window as any).__shadeRenderingPipeline
+    const result = await page.evaluate(({ captureImage, globals }) => {
+      const renderer = (window as any)[globals.canvasRenderer]
+      const pipeline = (window as any)[globals.renderingPipeline]
       if (!renderer || !pipeline) return { status: 'error', backend: 'unknown', error: 'No renderer' }
 
       const canvas = renderer.canvas
@@ -152,7 +152,7 @@ export async function renderEffectFrame(
           is_monochrome: isMono
         }
       }
-    }, options.captureImage ?? false)
+    }, { captureImage: options.captureImage ?? false, globals: session.globals })
 
     return result as RenderResult
   })

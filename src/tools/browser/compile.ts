@@ -27,13 +27,13 @@ export async function compileEffect(
     }, effectId)
 
     // Wait for compile
-    const result = await page.evaluate(({ timeout }) => {
+    const result = await page.evaluate(({ timeout, globals }) => {
       return new Promise<any>((resolve) => {
         const start = Date.now()
         const poll = () => {
           const status = document.getElementById('status')
           const text = (status?.textContent || '').toLowerCase()
-          const pipeline = (window as any).__shadeRenderingPipeline
+          const pipeline = (window as any)[globals.renderingPipeline]
 
           if (text.includes('error') || text.includes('failed')) {
             const passes = pipeline?.graph?.passes?.map((p: any, i: number) => ({
@@ -57,7 +57,7 @@ export async function compileEffect(
         }
         poll()
       })
-    }, { timeout: STATUS_TIMEOUT })
+    }, { timeout: STATUS_TIMEOUT, globals: session.globals })
 
     return { ...result, backend: session.backend }
   })

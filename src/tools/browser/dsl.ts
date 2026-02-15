@@ -20,7 +20,7 @@ export async function runDslProgram(
     const page = session.page!
 
     // Compile DSL
-    const compileResult = await page.evaluate(({ dsl, timeout }) => {
+    const compileResult = await page.evaluate(({ dsl, timeout, globals }) => {
       return new Promise<any>((resolve) => {
         // Try to find DSL editor and run
         const editor = document.getElementById('dsl-editor') as HTMLTextAreaElement | null
@@ -32,7 +32,7 @@ export async function runDslProgram(
           runBtn.click()
         } else {
           // Fallback: compile directly via renderer
-          const renderer = (window as any).__shadeCanvasRenderer
+          const renderer = (window as any)[globals.canvasRenderer]
           if (renderer?.compile) {
             renderer.compile(dsl).then(() => {
               resolve({ status: 'ok', message: 'Compiled via renderer' })
@@ -65,7 +65,7 @@ export async function runDslProgram(
         }
         poll()
       })
-    }, { dsl, timeout: 30000 })
+    }, { dsl, timeout: 30000, globals: session.globals })
 
     if (compileResult.status === 'error') {
       return { status: 'error', error: compileResult.message }
@@ -73,33 +73,33 @@ export async function runDslProgram(
 
     // Apply uniforms
     if (options.uniforms) {
-      await page.evaluate((unis) => {
-        const pipeline = (window as any).__shadeRenderingPipeline
+      await page.evaluate(({ unis, globals }) => {
+        const pipeline = (window as any)[globals.renderingPipeline]
         if (!pipeline) return
         for (const [k, v] of Object.entries(unis)) {
           if (pipeline.setUniform) pipeline.setUniform(k, v)
           else if (pipeline.globalUniforms) pipeline.globalUniforms[k] = v
         }
-      }, options.uniforms)
+      }, { unis: options.uniforms, globals: session.globals })
     }
 
     // Wait for warmup
     const warmup = options.warmupFrames ?? 10
-    await page.evaluate((frames) => {
+    await page.evaluate(({ frames, globals }) => {
       return new Promise<void>((resolve) => {
-        const start = (window as any).__shadeFrameCount || 0
+        const start = (window as any)[globals.frameCount] || 0
         const poll = () => {
-          if (((window as any).__shadeFrameCount || 0) - start >= frames) resolve()
+          if (((window as any)[globals.frameCount] || 0) - start >= frames) resolve()
           else requestAnimationFrame(poll)
         }
         poll()
       })
-    }, warmup)
+    }, { frames: warmup, globals: session.globals })
 
     // Read pixels and compute metrics
-    const result = await page.evaluate((captureImage) => {
-      const renderer = (window as any).__shadeCanvasRenderer
-      const pipeline = (window as any).__shadeRenderingPipeline
+    const result = await page.evaluate(({ captureImage, globals }) => {
+      const renderer = (window as any)[globals.canvasRenderer]
+      const pipeline = (window as any)[globals.renderingPipeline]
       if (!renderer || !pipeline) return { status: 'error', error: 'No renderer' }
 
       const canvas = renderer.canvas
@@ -157,7 +157,7 @@ export async function runDslProgram(
           is_monochrome: colors.size <= 1,
         }
       }
-    }, options.captureImage ?? false)
+    }, { captureImage: options.captureImage ?? false, globals: session.globals })
 
     return result
   })
