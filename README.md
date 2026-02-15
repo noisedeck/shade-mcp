@@ -3,9 +3,9 @@
 MCP server for shader effect development.
 
 Distilled from three projects:
-- **[noisemaker](https://github.com/aayars/noisemaker)** — browser-based shader testing
-- **[portable](https://github.com/aayars/portable)** — portable effect authoring
-- **[shade](https://github.com/aayars/shade)** — AI-native shader editing
+- **[noisemaker](https://noisemaker.app/)** — browser-based shader testing
+- **[portable](https://github.com/noisedeck/portable)** — portable effect authoring
+- **[shade](https://shade.noisedeck.app)** — AI-native shader editing
 
 ## Quick Start
 
