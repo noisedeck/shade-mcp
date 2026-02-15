@@ -2,7 +2,7 @@
 
 ## Goal
 
-Restructure shade-mcp so its harness, format parsing, and AI modules are importable as a library. Rewrite py-noisemaker's test harness to consume shade-mcp instead of maintaining duplicate code. Eventually deprecate py-noisemaker's standalone harness.
+Restructure shade-mcp so its harness, format parsing, and AI modules are importable as a library. Rewrite noisemaker's test harness to consume shade-mcp instead of maintaining duplicate code. Eventually deprecate noisemaker's standalone harness.
 
 ## Export Surface
 
@@ -31,7 +31,7 @@ interface BrowserSessionOptions {
 }
 ```
 
-shade-mcp's MCP tools use defaults. py-noisemaker passes `__noisemaker*` names.
+shade-mcp's MCP tools use defaults. Noisemaker passes `__noisemaker*` names.
 
 ## Build Changes
 
@@ -48,9 +48,9 @@ entry: {
 
 Add `"exports"` field to package.json mapping subpaths to dist outputs. Main entry stays as MCP server binary with shebang.
 
-## py-noisemaker Integration
+## Noisemaker Integration
 
-- Link shade-mcp via `"shade-mcp": "file:../shade-mcp"` in package.json
+- Vendor shade-mcp dist via `pull-shade-mcp` script
 - Delete `core-operations.js` (duplicated logic)
 - Delete `browser-harness.js` `BrowserSession` class
 - Rewrite `test-harness.js` as thin orchestration: CLI parsing, effect discovery, exemption sets, result reporting. All browser/analysis work delegates to shade-mcp imports.

@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Make shade-mcp importable as a library so py-noisemaker's test harness can consume it directly, then rewrite py-noisemaker's test-harness.js to use shade-mcp imports.
+**Goal:** Make shade-mcp importable as a library so noisemaker's test harness can consume it directly, then rewrite noisemaker's test-harness.js to use shade-mcp imports.
 
 **Architecture:** Multi-entry tsup build with package.json exports. BrowserSession gains configurable globals for viewer compatibility. Tool functions (compile, render, benchmark, etc.) are already exported separately from MCP registration — we surface them through barrel exports.
 
@@ -476,7 +476,7 @@ git commit -m "feat: add package.json exports for harness, formats, ai"
 
 ### Task 7: Add matchEffects glob utility
 
-py-noisemaker's test harness uses glob patterns like `synth/*`, `classicNoisemaker/*` to match effects. shade-mcp's `resolveEffectIds` doesn't support globs — it just scans directories. Add a `matchEffects` utility.
+noisemaker's test harness uses glob patterns like `synth/*`, `classicNoisemaker/*` to match effects. shade-mcp's `resolveEffectIds` doesn't support globs — it just scans directories. Add a `matchEffects` utility.
 
 **Files:**
 - Modify: `src/tools/resolve-effects.ts`
@@ -577,14 +577,14 @@ dist/
 
 ---
 
-### Task 9: Link shade-mcp into py-noisemaker
+### Task 9: Link shade-mcp into noisemaker
 
 **Files:**
 - Modify: `/Users/aayars/source/py-noisemaker/package.json`
 
 **Step 1: Add shade-mcp dependency**
 
-In py-noisemaker's package.json, add:
+In noisemaker's package.json, add:
 ```json
 "dependencies": {
   "shade-mcp": "file:../shade-mcp"
@@ -614,7 +614,7 @@ git commit -m "deps: add shade-mcp as local dependency"
 
 ---
 
-### Task 10: Rewrite py-noisemaker test-harness.js to use shade-mcp
+### Task 10: Rewrite noisemaker test-harness.js to use shade-mcp
 
 **Files:**
 - Modify: `/Users/aayars/source/py-noisemaker/shaders/mcp/test-harness.js`
@@ -723,7 +723,7 @@ Or use shade-mcp's `resolveEffectIds` for auto-discovery if appropriate.
 
 **Step 6: Handle API differences**
 
-shade-mcp's function signatures differ slightly from py-noisemaker's:
+shade-mcp's function signatures differ slightly from noisemaker's:
 - `renderEffectFrame` returns `RenderResult` with `metrics` field (same structure)
 - `compileEffect` returns `CompileResult` with `status`, `passes`, `message`
 - `benchmarkEffectFPS` returns `BenchmarkResult` with `achieved_fps`, `meets_target`, `stats`
@@ -760,7 +760,7 @@ git commit -m "refactor: test harness consumes shade-mcp library instead of loca
 
 ---
 
-### Task 11: Clean up deprecated py-noisemaker files
+### Task 11: Clean up deprecated noisemaker files
 
 After validating Task 10 works end-to-end:
 
