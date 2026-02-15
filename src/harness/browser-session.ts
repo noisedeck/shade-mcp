@@ -1,7 +1,8 @@
 import { chromium, type Browser, type BrowserContext, type Page, type ConsoleMessage } from 'playwright'
 import { resolve } from 'node:path'
 import type { Backend } from '../config.js'
-import type { BrowserSessionOptions, CompileResult, RenderResult, BenchmarkResult, ImageMetrics } from './types.js'
+import type { BrowserSessionOptions, CompileResult, RenderResult, BenchmarkResult, ImageMetrics, ViewerGlobals } from './types.js'
+import { DEFAULT_GLOBALS } from './types.js'
 import { acquireServer, releaseServer, getServerUrl } from './server-manager.js'
 import { getConfig } from '../config.js'
 
@@ -32,16 +33,18 @@ function getBrowserLaunchOptions(headless: boolean, backend: Backend) {
 }
 
 export class BrowserSession {
-  private options: Required<BrowserSessionOptions>
+  private options: Required<Omit<BrowserSessionOptions, 'globals'>>
   private browser: Browser | null = null
   private context: BrowserContext | null = null
   public page: Page | null = null
+  public globals: ViewerGlobals
   private baseUrl = ''
   private consoleMessages: ConsoleEntry[] = []
   private _isSetup = false
 
   constructor(opts: BrowserSessionOptions) {
     const config = getConfig()
+    this.globals = opts.globals ?? DEFAULT_GLOBALS
     this.options = {
       backend: opts.backend,
       headless: opts.headless !== false,
@@ -91,8 +94,10 @@ export class BrowserSession {
     await this.page.goto(`${this.baseUrl}/`, { waitUntil: 'networkidle' })
 
     // Wait for renderer to be ready
+    const rendererGlobal = this.globals.canvasRenderer
     await this.page.waitForFunction(
-      () => !!(window as any).__shadeCanvasRenderer,
+      (name) => !!(window as any)[name],
+      rendererGlobal,
       { timeout: STATUS_TIMEOUT }
     )
 
@@ -120,10 +125,10 @@ export class BrowserSession {
   async setBackend(backend: Backend): Promise<void> {
     const targetBackend = backend === 'webgpu' ? 'wgsl' : 'glsl'
 
-    await this.page!.evaluate(async ({ targetBackend, timeout }) => {
+    await this.page!.evaluate(async ({ targetBackend, timeout, globals }) => {
       const w = window as any
-      const current = typeof w.__shadeCurrentBackend === 'function'
-        ? w.__shadeCurrentBackend()
+      const current = typeof w[globals.currentBackend] === 'function'
+        ? w[globals.currentBackend]()
         : 'glsl'
 
       if (current !== targetBackend) {
@@ -132,13 +137,13 @@ export class BrowserSession {
           radio.click()
           const start = Date.now()
           while (Date.now() - start < timeout) {
-            const nowBackend = typeof w.__shadeCurrentBackend === 'function' ? w.__shadeCurrentBackend() : 'glsl'
+            const nowBackend = typeof w[globals.currentBackend] === 'function' ? w[globals.currentBackend]() : 'glsl'
             if (nowBackend === targetBackend) break
             await new Promise(r => setTimeout(r, 50))
           }
         }
       }
-    }, { targetBackend, timeout: STATUS_TIMEOUT })
+    }, { targetBackend, timeout: STATUS_TIMEOUT, globals: this.globals })
   }
 
   clearConsoleMessages(): void {
@@ -173,18 +178,18 @@ export class BrowserSession {
   }
 
   async getEffectGlobals(): Promise<Record<string, any>> {
-    return await this.page!.evaluate(() => {
-      const effect = (window as any).__shadeCurrentEffect
+    return await this.page!.evaluate((globals) => {
+      const effect = (window as any)[globals.currentEffect]
       if (!effect?.instance?.globals) return {}
       return effect.instance.globals
-    })
+    }, this.globals)
   }
 
   async resetUniformsToDefaults(): Promise<void> {
-    await this.page!.evaluate(() => {
+    await this.page!.evaluate((globals) => {
       const w = window as any
-      const pipeline = w.__shadeRenderingPipeline
-      const effect = w.__shadeCurrentEffect
+      const pipeline = w[globals.renderingPipeline]
+      const effect = w[globals.currentEffect]
       if (!pipeline || !effect?.instance?.globals) return
 
       for (const spec of Object.values(effect.instance.globals) as any[]) {
@@ -196,6 +201,6 @@ export class BrowserSession {
           pipeline.globalUniforms[spec.uniform] = val
         }
       }
-    })
+    }, this.globals)
   }
 }
