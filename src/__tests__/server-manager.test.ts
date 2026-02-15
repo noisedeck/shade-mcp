@@ -54,6 +54,16 @@ describe('server-manager', () => {
       expect(json.name).toBe('test')
     })
 
+    it('returns 404 for missing files', async () => {
+      mkdirSync(tmpDir, { recursive: true })
+      writeFileSync(resolve(tmpDir, 'index.html'), '')
+      mkdirSync(tmpEffects, { recursive: true })
+
+      const url = await acquireServer(testPort, tmpDir, tmpEffects)
+      const res = await fetch(`${url}/nonexistent.html`)
+      expect(res.status).toBe(404)
+    })
+
     it('ref-counts correctly', async () => {
       mkdirSync(tmpDir, { recursive: true })
       writeFileSync(resolve(tmpDir, 'index.html'), '')

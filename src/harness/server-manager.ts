@@ -1,6 +1,6 @@
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http'
 import { createReadStream, existsSync, statSync } from 'node:fs'
-import { extname, join } from 'node:path'
+import { extname, join, resolve as pathResolve, normalize } from 'node:path'
 
 let httpServer: Server | null = null
 let refCount = 0
@@ -22,6 +22,12 @@ const MIME_TYPES: Record<string, string> = {
   '.vert': 'text/plain',
 }
 
+function safePath(root: string, relPath: string): string | null {
+  const resolved = pathResolve(root, normalize(relPath))
+  if (!resolved.startsWith(pathResolve(root))) return null
+  return resolved
+}
+
 function serveFile(filePath: string, res: ServerResponse): void {
   if (!existsSync(filePath) || !statSync(filePath).isFile()) {
     res.writeHead(404)
@@ -35,7 +41,14 @@ function serveFile(filePath: string, res: ServerResponse): void {
     'Cache-Control': 'no-store',
     'Access-Control-Allow-Origin': '*',
   })
-  createReadStream(filePath).pipe(res)
+  const stream = createReadStream(filePath)
+  stream.on('error', () => {
+    if (!res.headersSent) {
+      res.writeHead(500)
+    }
+    res.end()
+  })
+  stream.pipe(res)
 }
 
 export async function acquireServer(
@@ -50,18 +63,31 @@ export async function acquireServer(
   }
 
   httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
-    const url = decodeURIComponent(req.url || '/')
+    const parsedUrl = new URL(req.url || '/', `http://${req.headers.host}`)
+    const url = decodeURIComponent(parsedUrl.pathname)
 
     // Route: /effects/* → effectsDir
     if (url.startsWith('/effects/')) {
       const relPath = url.slice('/effects/'.length)
-      serveFile(join(effectsDir, relPath), res)
+      const filePath = safePath(effectsDir, relPath)
+      if (!filePath) {
+        res.writeHead(403)
+        res.end('Forbidden')
+        return
+      }
+      serveFile(filePath, res)
       return
     }
 
     // Route: everything else → viewerRoot
     const relPath = url === '/' ? 'index.html' : url.slice(1)
-    serveFile(join(viewerRoot, relPath), res)
+    const filePath = safePath(viewerRoot, relPath)
+    if (!filePath) {
+      res.writeHead(403)
+      res.end('Forbidden')
+      return
+    }
+    serveFile(filePath, res)
   })
 
   await new Promise<void>((resolve, reject) => {
