@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { chromium } from 'playwright'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import type { BenchmarkResult } from '../../harness/types.js'
 import { getConfig } from '../../config.js'
@@ -35,47 +35,71 @@ export async function benchmarkEffectFPS(
       return t.includes('loaded') || t.includes('ready') || t.includes('error')
     }, { timeout: 30000 })
 
-    // Run benchmark
+    // Run benchmark with per-frame timing
     const result = await page.evaluate(({ duration }) => {
       return new Promise<any>((resolve) => {
-        const w = window as any
-        const startFrame = w.__shadeFrameCount || 0
-        const startTime = performance.now()
+        const frameTimes: number[] = []
+        let lastTime = performance.now()
+        let running = true
+
+        function onFrame() {
+          if (!running) return
+          const now = performance.now()
+          frameTimes.push(now - lastTime)
+          lastTime = now
+          requestAnimationFrame(onFrame)
+        }
+
+        requestAnimationFrame(onFrame)
 
         setTimeout(() => {
-          const endFrame = w.__shadeFrameCount || 0
-          const endTime = performance.now()
-          const totalMs = endTime - startTime
-          const frameCount = endFrame - startFrame
+          running = false
+          const frameCount = frameTimes.length
+          const totalMs = frameTimes.reduce((a, b) => a + b, 0)
           const fps = frameCount / (totalMs / 1000)
           const avgFrameTime = totalMs / Math.max(frameCount, 1)
+
+          let minFrameTime = Infinity, maxFrameTime = 0
+          for (const t of frameTimes) {
+            if (t < minFrameTime) minFrameTime = t
+            if (t > maxFrameTime) maxFrameTime = t
+          }
+
+          // Jitter = standard deviation of frame times
+          let sumSq = 0
+          for (const t of frameTimes) sumSq += (t - avgFrameTime) ** 2
+          const jitter = frameCount > 1 ? Math.sqrt(sumSq / (frameCount - 1)) : 0
 
           resolve({
             frame_count: frameCount,
             achieved_fps: Math.round(fps * 100) / 100,
             avg_frame_time_ms: Math.round(avgFrameTime * 100) / 100,
+            min_frame_time_ms: Math.round((minFrameTime === Infinity ? 0 : minFrameTime) * 100) / 100,
+            max_frame_time_ms: Math.round(maxFrameTime * 100) / 100,
+            jitter_ms: Math.round(jitter * 100) / 100,
           })
         }, duration * 1000)
       })
     }, { duration })
 
+    const backend = session.backend
     return {
       status: 'ok' as const,
-      backend: 'webgl2',
+      backend,
       achieved_fps: result.achieved_fps,
       meets_target: result.achieved_fps >= targetFps,
       stats: {
         frame_count: result.frame_count,
         avg_frame_time_ms: result.avg_frame_time_ms,
-        jitter_ms: 0,
-        min_frame_time_ms: 0,
-        max_frame_time_ms: 0,
+        jitter_ms: result.jitter_ms,
+        min_frame_time_ms: result.min_frame_time_ms,
+        max_frame_time_ms: result.max_frame_time_ms,
       }
     }
   })
 }
 
-export function registerBenchmarkEffectFPS(server: any): void {
+export function registerBenchmarkEffectFPS(server: McpServer): void {
   server.tool(
     'benchmarkEffectFPS',
     'Measure achieved FPS, jitter, frame timing stats against a target framerate.',

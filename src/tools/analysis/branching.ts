@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { getAIProvider, callAI, NO_AI_KEY_MESSAGE } from '../../ai/provider.js'
@@ -69,7 +70,7 @@ export async function analyzeBranching(effectId: string, backend: string): Promi
   }
 }
 
-export function registerAnalyzeBranching(server: any): void {
+export function registerAnalyzeBranching(server: McpServer): void {
   server.tool(
     'analyzeBranching',
     'AI analysis of unnecessary shader branching with optimization suggestions.',

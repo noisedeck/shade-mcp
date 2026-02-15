@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, basename } from 'node:path'
 import { getConfig } from '../../config.js'
@@ -110,7 +111,7 @@ export async function compareShaders(effectId: string): Promise<any> {
   }
 }
 
-export function registerCompareShaders(server: any): void {
+export function registerCompareShaders(server: McpServer): void {
   server.tool(
     'compareShaders',
     'Static structural comparison: function names, uniform declarations, line counts. No AI needed.',

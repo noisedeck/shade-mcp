@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { GlslIndex } from '../../knowledge/glsl-index.js'
 import { getConfig } from '../../config.js'
 
@@ -18,7 +19,7 @@ export const searchShaderSourceSchema = {
   limit: z.number().optional().default(10).describe('Maximum results'),
 }
 
-export function registerSearchShaderSource(server: any): void {
+export function registerSearchShaderSource(server: McpServer): void {
   server.tool(
     'searchShaderSource',
     'Regex search through GLSL source code across all effects. Returns matching snippets with context.',

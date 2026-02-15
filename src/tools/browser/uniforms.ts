@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import { getConfig } from '../../config.js'
 
@@ -122,7 +123,7 @@ export async function testUniformResponsiveness(
   })
 }
 
-export function registerTestUniformResponsiveness(server: any): void {
+export function registerTestUniformResponsiveness(server: McpServer): void {
   server.tool(
     'testUniformResponsiveness',
     'For each uniform: render baseline, modify value, compare output. Returns per-uniform pass/fail.',

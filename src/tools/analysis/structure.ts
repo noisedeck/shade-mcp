@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, basename } from 'node:path'
 import { loadEffectDefinition } from '../../formats/index.js'
@@ -107,7 +108,7 @@ export async function checkEffectStructure(effectId: string): Promise<any> {
   return { status: hasIssues ? 'warning' : 'ok', ...issues }
 }
 
-export function registerCheckEffectStructure(server: any): void {
+export function registerCheckEffectStructure(server: McpServer): void {
   server.tool(
     'checkEffectStructure',
     'Detect unused files, broken references, naming violations, leaked/undefined uniforms, missing descriptions, structural parity issues.',

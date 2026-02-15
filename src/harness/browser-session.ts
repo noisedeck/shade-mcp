@@ -158,6 +158,10 @@ export class BrowserSession {
     return result
   }
 
+  get backend(): string {
+    return this.options.backend
+  }
+
   async selectEffect(effectId: string): Promise<void> {
     await this.page!.evaluate((id) => {
       const select = document.getElementById('effect-select') as HTMLSelectElement | null

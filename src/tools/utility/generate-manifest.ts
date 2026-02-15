@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { readdirSync, writeFileSync, existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadEffectDefinition } from '../../formats/index.js'
@@ -6,7 +7,7 @@ import { getConfig } from '../../config.js'
 
 export const generateManifestSchema = {}
 
-export function registerGenerateManifest(server: any): void {
+export function registerGenerateManifest(server: McpServer): void {
   server.tool(
     'generateManifest',
     'Rebuild effect manifest by scanning effects directory.',

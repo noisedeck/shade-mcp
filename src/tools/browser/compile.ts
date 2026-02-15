@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import type { CompileResult } from '../../harness/types.js'
 import { getConfig } from '../../config.js'
@@ -57,11 +58,11 @@ export async function compileEffect(
       })
     }, { timeout: STATUS_TIMEOUT })
 
-    return { ...result, backend: session.page ? 'ok' : 'unknown' }
+    return { ...result, backend: session.backend }
   })
 }
 
-export function registerCompileEffect(server: any): void {
+export function registerCompileEffect(server: McpServer): void {
   server.tool(
     'compileEffect',
     'Compile shader effect and return pass-level diagnostics. Supports glob/CSV batch.',

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, basename } from 'node:path'
 import { getAIProvider, callAI, NO_AI_KEY_MESSAGE } from '../../ai/provider.js'
@@ -95,7 +96,7 @@ export async function checkAlgEquiv(effectId: string): Promise<any> {
   }
 }
 
-export function registerCheckAlgEquiv(server: any): void {
+export function registerCheckAlgEquiv(server: McpServer): void {
   server.tool(
     'checkAlgEquiv',
     'AI semantic comparison of GLSL/WGSL pairs. Flags truly divergent algorithms, ignores syntax differences.',

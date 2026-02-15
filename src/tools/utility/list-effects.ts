@@ -1,28 +1,18 @@
 import { z } from 'zod'
-import { EffectIndex } from '../../knowledge/effect-index.js'
-import { getConfig } from '../../config.js'
-
-let effectIndex: EffectIndex | null = null
-
-async function getEffectIndex(): Promise<EffectIndex> {
-  if (!effectIndex) {
-    effectIndex = new EffectIndex()
-    await effectIndex.initialize(getConfig().effectsDir)
-  }
-  return effectIndex
-}
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { getSharedEffectIndex } from '../../knowledge/shared-instances.js'
 
 export const listEffectsSchema = {
   namespace: z.string().optional().describe('Filter by namespace'),
 }
 
-export function registerListEffects(server: any): void {
+export function registerListEffects(server: McpServer): void {
   server.tool(
     'listEffects',
     'List all effects, optionally filtered by namespace.',
     listEffectsSchema,
     async (args: any) => {
-      const index = await getEffectIndex()
+      const index = await getSharedEffectIndex()
       const effects = index.list(args.namespace)
 
       const output = {

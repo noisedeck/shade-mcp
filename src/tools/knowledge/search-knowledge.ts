@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { ShaderKnowledgeDB } from '../../knowledge/vector-db.js'
 import { CURATED_KNOWLEDGE, expandQueryWithSynonyms } from '../../knowledge/shader-knowledge.js'
 
@@ -19,7 +20,7 @@ export const searchShaderKnowledgeSchema = {
   limit: z.number().optional().default(5).describe('Maximum results'),
 }
 
-export function registerSearchShaderKnowledge(server: any): void {
+export function registerSearchShaderKnowledge(server: McpServer): void {
   server.tool(
     'searchShaderKnowledge',
     'Semantic search over curated shader documentation: DSL grammar, GLSL techniques, effect patterns, common errors.',

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadEffectDefinition } from '../../formats/index.js'
@@ -8,7 +9,7 @@ export const analyzeEffectSchema = {
   effect_id: z.string().describe('Effect ID (e.g., "synth/noise")'),
 }
 
-export function registerAnalyzeEffect(server: any): void {
+export function registerAnalyzeEffect(server: McpServer): void {
   server.tool(
     'analyzeEffect',
     'Deep-dive into an effect: full definition, shader source, uniforms, passes.',

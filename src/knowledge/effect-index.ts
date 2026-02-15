@@ -1,4 +1,5 @@
-import { readdirSync, existsSync, statSync } from 'node:fs'
+import { readdir, stat } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadEffectDefinition, type EffectDefinition } from '../formats/index.js'
 
@@ -10,16 +11,15 @@ export class EffectIndex {
     if (this.initialized) return
     if (!existsSync(effectsDir)) return
 
-    // Scan for namespace directories
-    const entries = readdirSync(effectsDir)
+    const entries = await readdir(effectsDir)
     for (const ns of entries) {
       const nsDir = join(effectsDir, ns)
-      if (!statSync(nsDir).isDirectory()) continue
+      if (!(await stat(nsDir)).isDirectory()) continue
 
-      const effects = readdirSync(nsDir)
+      const effects = await readdir(nsDir)
       for (const effect of effects) {
         const effectDir = join(nsDir, effect)
-        if (!statSync(effectDir).isDirectory()) continue
+        if (!(await stat(effectDir)).isDirectory()) continue
 
         try {
           const def = loadEffectDefinition(effectDir)
@@ -42,7 +42,6 @@ export class EffectIndex {
     for (const [id, def] of this.effects) {
       let score = 0
 
-      // Name matching
       if (id.toLowerCase().includes(lower)) score += 20
       for (const kw of keywords) {
         if (id.toLowerCase().includes(kw)) score += 8

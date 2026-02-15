@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import { getConfig } from '../../config.js'
 
@@ -162,7 +163,7 @@ export async function runDslProgram(
   })
 }
 
-export function registerRunDslProgram(server: any): void {
+export function registerRunDslProgram(server: McpServer): void {
   server.tool(
     'runDslProgram',
     'Compile and execute arbitrary DSL code without pre-defined effect files. Returns metrics + pass status.',

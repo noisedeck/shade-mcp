@@ -14,7 +14,7 @@ export function getConfig(): Config {
   return {
     effectsDir: process.env.SHADE_EFFECTS_DIR || resolve(projectRoot, 'effects'),
     viewerPort: parseInt(process.env.SHADE_VIEWER_PORT || '4173', 10),
-    defaultBackend: (process.env.SHADE_BACKEND as Backend) || 'webgl2',
+    defaultBackend: (['webgl2', 'webgpu'].includes(process.env.SHADE_BACKEND || '') ? process.env.SHADE_BACKEND as Backend : 'webgl2'),
     projectRoot
   }
 }

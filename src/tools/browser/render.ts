@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import type { RenderResult } from '../../harness/types.js'
 import { getConfig } from '../../config.js'
@@ -155,7 +156,7 @@ export async function renderEffectFrame(
   })
 }
 
-export function registerRenderEffectFrame(server: any): void {
+export function registerRenderEffectFrame(server: McpServer): void {
   server.tool(
     'renderEffectFrame',
     'Render single frame, compute image metrics (mean RGB, variance, monochrome/blank detection), optional PNG capture.',

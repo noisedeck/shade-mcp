@@ -27,17 +27,32 @@ export function parseDefinitionJs(filePath: string, effectDir: string): EffectDe
     passes.push({ program: 'main' })
   }
 
-  // Extract globals (basic extraction)
+  // Extract globals with type info
   const globals: EffectDefinition['globals'] = {}
   const globalsMatch = source.match(/globals:\s*\{([\s\S]*?)\n\s*\}/)
   if (globalsMatch) {
-    const uniformRegex = /(\w+):\s*\{[^}]*uniform:\s*['"](\w+)['"][^}]*\}/g
+    const uniformRegex = /(\w+):\s*(\{[^}]*\})/g
     let uMatch
     while ((uMatch = uniformRegex.exec(globalsMatch[1])) !== null) {
-      globals[uMatch[1]] = {
-        name: uMatch[1],
-        type: 'float',
-        uniform: uMatch[2],
+      const name = uMatch[1]
+      const block = uMatch[2]
+      const uniform = extractString(block, /uniform:\s*['"](\w+)['"]/)
+      if (!uniform) continue
+
+      const type = extractString(block, /type:\s*['"](\w+)['"]/) || 'float'
+      const min = extractNumber(block, /min:\s*([-\d.]+)/)
+      const max = extractNumber(block, /max:\s*([-\d.]+)/)
+      const step = extractNumber(block, /step:\s*([-\d.]+)/)
+      const defaultVal = extractNumber(block, /default:\s*([-\d.]+)/)
+
+      globals[name] = {
+        name,
+        type: type as any,
+        uniform,
+        ...(defaultVal !== undefined && { default: defaultVal }),
+        ...(min !== undefined && { min }),
+        ...(max !== undefined && { max }),
+        ...(step !== undefined && { step }),
       }
     }
   }
@@ -59,4 +74,9 @@ export function parseDefinitionJs(filePath: string, effectDir: string): EffectDe
 function extractString(source: string, regex: RegExp): string | undefined {
   const match = source.match(regex)
   return match ? match[1] : undefined
+}
+
+function extractNumber(source: string, regex: RegExp): number | undefined {
+  const match = source.match(regex)
+  return match ? parseFloat(match[1]) : undefined
 }

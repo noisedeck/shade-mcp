@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import { renderEffectFrame } from './render.js'
 import { getAIProvider, callAI, NO_AI_KEY_MESSAGE } from '../../ai/provider.js'
@@ -47,7 +48,7 @@ export async function describeEffectFrame(
   }
 }
 
-export function registerDescribeEffectFrame(server: any): void {
+export function registerDescribeEffectFrame(server: McpServer): void {
   server.tool(
     'describeEffectFrame',
     'Render frame + AI vision analysis. User provides analysis prompt.',

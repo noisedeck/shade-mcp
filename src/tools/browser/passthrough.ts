@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import { getConfig } from '../../config.js'
 
@@ -54,27 +55,44 @@ export async function testNoPassthrough(
       gl.bindFramebuffer(gl.FRAMEBUFFER, null)
       gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
 
-      // Compute pixel variance to check if output differs from blank/passthrough
+      // Render two frames at different times and compare
+      // If the output changes between t=0 and t=1, the effect is modifying input
+      renderer.render(0)
+      const pixels0 = new Uint8Array(width * height * 4)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+      gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels0)
+
+      renderer.render(1.0)
+      const pixels1 = new Uint8Array(width * height * 4)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+      gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels1)
+
+      // Compare output at two times
       const pixelCount = width * height
       const stride = Math.max(1, Math.floor(pixelCount / 1000))
-      let totalDiff = 0
-      let samples = 0
+      let diffSum = 0, samples = 0
+      const colors = new Set<string>()
 
       for (let i = 0; i < pixelCount; i += stride) {
         const idx = i * 4
-        // Check if pixels differ from a neutral value (128,128,128)
-        totalDiff += Math.abs(pixels[idx] - 128) + Math.abs(pixels[idx + 1] - 128) + Math.abs(pixels[idx + 2] - 128)
+        diffSum += Math.abs(pixels0[idx] - pixels1[idx]) +
+          Math.abs(pixels0[idx + 1] - pixels1[idx + 1]) +
+          Math.abs(pixels0[idx + 2] - pixels1[idx + 2])
+        colors.add(`${pixels[idx]},${pixels[idx + 1]},${pixels[idx + 2]}`)
         samples++
       }
 
-      const meanDiff = totalDiff / (samples * 3 * 255)
+      const temporalDiff = diffSum / (samples * 3 * 255)
+      const uniqueColors = colors.size
+      // An effect that modifies input should either vary over time or produce varied output
+      const isModifying = temporalDiff > 0.01 || uniqueColors > 5
 
       return {
-        status: meanDiff > 0.01 ? 'ok' : 'passthrough',
+        status: isModifying ? 'ok' : 'passthrough',
         isFilterEffect: true,
-        similarity: 1 - meanDiff,
-        meanDiff,
-        details: meanDiff > 0.01 ? 'Effect modifies input' : 'Effect may be passing through unchanged'
+        temporalDiff,
+        uniqueColors,
+        details: isModifying ? 'Effect modifies input' : 'Effect may be passing through unchanged'
       }
     })
 
@@ -82,7 +100,7 @@ export async function testNoPassthrough(
   })
 }
 
-export function registerTestNoPassthrough(server: any): void {
+export function registerTestNoPassthrough(server: McpServer): void {
   server.tool(
     'testNoPassthrough',
     'Verify filter effects actually modify their input (>1% pixel difference).',

@@ -1,4 +1,5 @@
-import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
+import { readdir, readFile, stat } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
 interface GlslSearchResult {
@@ -17,23 +18,23 @@ export class GlslIndex {
     if (this.initialized) return
     if (!existsSync(effectsDir)) return
 
-    const namespaces = readdirSync(effectsDir)
+    const namespaces = await readdir(effectsDir)
     for (const ns of namespaces) {
       const nsDir = join(effectsDir, ns)
-      if (!statSync(nsDir).isDirectory()) continue
+      if (!(await stat(nsDir)).isDirectory()) continue
 
-      const effects = readdirSync(nsDir)
+      const effects = await readdir(nsDir)
       for (const effect of effects) {
         const effectDir = join(nsDir, effect)
-        if (!statSync(effectDir).isDirectory()) continue
+        if (!(await stat(effectDir)).isDirectory()) continue
 
         const glslDir = join(effectDir, 'glsl')
         if (!existsSync(glslDir)) continue
 
-        const glslFiles = readdirSync(glslDir).filter(f => f.endsWith('.glsl'))
+        const glslFiles = (await readdir(glslDir)).filter(f => f.endsWith('.glsl'))
         for (const gf of glslFiles) {
           const filePath = join(glslDir, gf)
-          const content = readFileSync(filePath, 'utf-8')
+          const content = await readFile(filePath, 'utf-8')
           const effectId = `${ns}/${effect}`
           this.files.set(`${effectId}/${gf}`, { effectId, content, file: gf })
         }

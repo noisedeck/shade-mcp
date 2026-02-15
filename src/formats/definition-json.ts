@@ -1,4 +1,4 @@
-import type { EffectDefinition } from './types.js'
+import type { EffectDefinition, EffectUniform } from './types.js'
 
 export function parseDefinitionJson(json: Record<string, unknown>, effectDir: string): EffectDefinition {
   const globals: EffectDefinition['globals'] = {}
@@ -7,7 +7,7 @@ export function parseDefinitionJson(json: Record<string, unknown>, effectDir: st
   for (const [key, spec] of Object.entries(rawGlobals)) {
     globals[key] = {
       name: key,
-      type: (spec.type as string) || 'float',
+      type: (spec.type as EffectUniform['type']) || 'float',
       uniform: (spec.uniform as string) || key,
       default: spec.default as number | number[] | undefined,
       min: spec.min as number | undefined,
