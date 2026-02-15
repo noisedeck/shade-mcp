@@ -1,5 +1,5 @@
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http'
-import { createReadStream, existsSync, statSync } from 'node:fs'
+import { createReadStream, existsSync } from 'node:fs'
 import { extname, join, resolve as pathResolve, normalize, basename } from 'node:path'
 
 let httpServer: Server | null = null
@@ -29,26 +29,24 @@ function safePath(root: string, relPath: string): string | null {
 }
 
 function serveFile(filePath: string, res: ServerResponse): void {
-  if (!existsSync(filePath) || !statSync(filePath).isFile()) {
-    res.writeHead(404)
-    res.end('Not found')
-    return
-  }
   const ext = extname(filePath).toLowerCase()
   const mime = MIME_TYPES[ext] || 'application/octet-stream'
-  res.writeHead(200, {
-    'Content-Type': mime,
-    'Cache-Control': 'no-store',
-    'Access-Control-Allow-Origin': '*',
-  })
   const stream = createReadStream(filePath)
-  stream.on('error', () => {
+  stream.on('error', (err) => {
     if (!res.headersSent) {
-      res.writeHead(500)
+      const status = (err as NodeJS.ErrnoException).code === 'ENOENT' ? 404 : 500
+      res.writeHead(status)
     }
     res.end()
   })
-  stream.pipe(res)
+  stream.on('open', () => {
+    res.writeHead(200, {
+      'Content-Type': mime,
+      'Cache-Control': 'no-store',
+      'Access-Control-Allow-Origin': '*',
+    })
+    stream.pipe(res)
+  })
 }
 
 export async function acquireServer(
@@ -56,11 +54,14 @@ export async function acquireServer(
   viewerRoot: string,
   effectsDir: string,
 ): Promise<string> {
-  activePort = port
   if (refCount > 0) {
+    if (port !== activePort) {
+      throw new Error(`Server already running on port ${activePort}, cannot switch to ${port}`)
+    }
     refCount++
     return getServerUrl()
   }
+  activePort = port
 
   // Detect flat layout (effectsDir itself contains definition.json/js)
   const isFlatLayout = existsSync(join(effectsDir, 'definition.json')) || existsSync(join(effectsDir, 'definition.js'))

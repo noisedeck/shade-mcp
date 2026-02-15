@@ -38,7 +38,7 @@ Add `effects` (CSV string) parameter to all browser tools that currently only ac
 Extract a shared `resolveEffectIds(args)` helper that:
 1. Takes `{ effect_id?, effects? }`
 2. Returns `string[]` of resolved effect IDs
-3. Supports glob expansion against the effects directory
+3. Splits CSV into individual effect IDs (glob expansion deliberately omitted — CSV covers practical use cases)
 4. Falls back to single-effect auto-detection (see below)
 
 ### 3. Single-effect auto-detection
