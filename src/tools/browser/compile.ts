@@ -3,6 +3,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import type { CompileResult } from '../../harness/types.js'
 import { getConfig } from '../../config.js'
+import { resolveEffectIds } from '../resolve-effects.js'
 
 const STATUS_TIMEOUT = 30000
 
@@ -72,9 +73,7 @@ export function registerCompileEffect(server: McpServer): void {
       const session = new BrowserSession({ backend: args.backend })
       try {
         await session.setup()
-        const effectIds = args.effects
-          ? args.effects.split(',').map((s: string) => s.trim())
-          : [args.effect_id || '']
+        const effectIds = resolveEffectIds(args, config.effectsDir)
 
         const results = []
         for (const id of effectIds) {

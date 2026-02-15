@@ -3,9 +3,11 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import type { BenchmarkResult } from '../../harness/types.js'
 import { getConfig } from '../../config.js'
+import { resolveEffectIds } from '../resolve-effects.js'
 
 export const benchmarkEffectFPSSchema = {
-  effect_id: z.string().describe('Effect ID'),
+  effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
+  effects: z.string().optional().describe('CSV of effect IDs'),
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
   target_fps: z.number().optional().default(60).describe('Target FPS'),
   duration_seconds: z.number().optional().default(5).describe('Benchmark duration in seconds'),
@@ -105,14 +107,19 @@ export function registerBenchmarkEffectFPS(server: McpServer): void {
     'Measure achieved FPS, jitter, frame timing stats against a target framerate.',
     benchmarkEffectFPSSchema,
     async (args: any) => {
+      const config = getConfig()
+      const effectIds = resolveEffectIds(args, config.effectsDir)
       const session = new BrowserSession({ backend: args.backend })
       try {
         await session.setup()
-        const result = await benchmarkEffectFPS(session, args.effect_id, {
-          targetFps: args.target_fps,
-          durationSeconds: args.duration_seconds,
-        })
-        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+        const results = []
+        for (const id of effectIds) {
+          results.push(await benchmarkEffectFPS(session, id, {
+            targetFps: args.target_fps,
+            durationSeconds: args.duration_seconds,
+          }))
+        }
+        return { content: [{ type: 'text', text: JSON.stringify(results.length === 1 ? results[0] : results, null, 2) }] }
       } finally {
         await session.teardown()
       }

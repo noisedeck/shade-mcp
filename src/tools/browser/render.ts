@@ -3,9 +3,11 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import type { RenderResult } from '../../harness/types.js'
 import { getConfig } from '../../config.js'
+import { resolveEffectIds } from '../resolve-effects.js'
 
 export const renderEffectFrameSchema = {
-  effect_id: z.string().describe('Effect ID'),
+  effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
+  effects: z.string().optional().describe('CSV of effect IDs'),
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
   warmup_frames: z.number().optional().default(10).describe('Frames to wait before capture'),
   capture_image: z.boolean().optional().default(false).describe('Capture PNG data URI'),
@@ -162,15 +164,20 @@ export function registerRenderEffectFrame(server: McpServer): void {
     'Render single frame, compute image metrics (mean RGB, variance, monochrome/blank detection), optional PNG capture.',
     renderEffectFrameSchema,
     async (args: any) => {
+      const config = getConfig()
+      const effectIds = resolveEffectIds(args, config.effectsDir)
       const session = new BrowserSession({ backend: args.backend })
       try {
         await session.setup()
-        const result = await renderEffectFrame(session, args.effect_id, {
-          warmupFrames: args.warmup_frames,
-          captureImage: args.capture_image,
-          uniforms: args.uniforms,
-        })
-        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+        const results = []
+        for (const id of effectIds) {
+          results.push(await renderEffectFrame(session, id, {
+            warmupFrames: args.warmup_frames,
+            captureImage: args.capture_image,
+            uniforms: args.uniforms,
+          }))
+        }
+        return { content: [{ type: 'text', text: JSON.stringify(results.length === 1 ? results[0] : results, null, 2) }] }
       } finally {
         await session.teardown()
       }

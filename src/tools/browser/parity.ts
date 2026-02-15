@@ -3,9 +3,11 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import type { ParityResult } from '../../harness/types.js'
 import { getConfig } from '../../config.js'
+import { resolveEffectIds } from '../resolve-effects.js'
 
 export const testPixelParitySchema = {
-  effect_id: z.string().describe('Effect ID'),
+  effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
+  effects: z.string().optional().describe('CSV of effect IDs'),
   epsilon: z.number().optional().default(1).describe('Allowed per-channel difference (0-255)'),
 }
 
@@ -137,11 +139,16 @@ export function registerTestPixelParity(server: McpServer): void {
     'Render on both WebGL2 and WebGPU, compare pixel-by-pixel within epsilon tolerance.',
     testPixelParitySchema,
     async (args: any) => {
+      const config = getConfig()
+      const effectIds = resolveEffectIds(args, config.effectsDir)
       const session = new BrowserSession({ backend: 'webgl2' })
       try {
         await session.setup()
-        const result = await testPixelParity(session, args.effect_id, { epsilon: args.epsilon })
-        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+        const results = []
+        for (const id of effectIds) {
+          results.push(await testPixelParity(session, id, { epsilon: args.epsilon }))
+        }
+        return { content: [{ type: 'text', text: JSON.stringify(results.length === 1 ? results[0] : results, null, 2) }] }
       } finally {
         await session.teardown()
       }

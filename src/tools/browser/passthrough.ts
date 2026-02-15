@@ -2,9 +2,11 @@ import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import { getConfig } from '../../config.js'
+import { resolveEffectIds } from '../resolve-effects.js'
 
 export const testNoPassthroughSchema = {
-  effect_id: z.string().describe('Effect ID'),
+  effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
+  effects: z.string().optional().describe('CSV of effect IDs'),
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
 }
 
@@ -100,11 +102,16 @@ export function registerTestNoPassthrough(server: McpServer): void {
     'Verify filter effects actually modify their input (>1% pixel difference).',
     testNoPassthroughSchema,
     async (args: any) => {
+      const config = getConfig()
+      const effectIds = resolveEffectIds(args, config.effectsDir)
       const session = new BrowserSession({ backend: args.backend })
       try {
         await session.setup()
-        const result = await testNoPassthrough(session, args.effect_id)
-        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+        const results = []
+        for (const id of effectIds) {
+          results.push(await testNoPassthrough(session, id))
+        }
+        return { content: [{ type: 'text', text: JSON.stringify(results.length === 1 ? results[0] : results, null, 2) }] }
       } finally {
         await session.teardown()
       }
