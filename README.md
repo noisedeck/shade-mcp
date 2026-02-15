@@ -16,6 +16,8 @@ bash scripts/setup.sh  # vendor noisemaker runtime (requires ../noisemaker)
 npm run build
 ```
 
+**Using shade-mcp with noisemaker or portable?** See [docs/SETUP.md](docs/SETUP.md) for step-by-step configuration.
+
 ## Configuration
 
 Environment variables:
@@ -109,7 +111,7 @@ Require Playwright Chromium and vendored noisemaker runtime.
 
 | Tool | Description |
 |------|-------------|
-| `compileEffect` | Compile shader effect, return pass-level diagnostics. Supports glob/CSV batch. |
+| `compileEffect` | Compile shader effect, return pass-level diagnostics. Supports CSV batch. |
 | `renderEffectFrame` | Render single frame, compute image metrics (mean RGB, variance, blank/monochrome detection), optional PNG capture. |
 | `describeEffectFrame` | Render frame + AI vision analysis. Requires `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`. |
 | `benchmarkEffectFPS` | Measure FPS, jitter, and frame timing stats against a target framerate. |
