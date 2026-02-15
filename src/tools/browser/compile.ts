@@ -9,7 +9,7 @@ const STATUS_TIMEOUT = 30000
 
 export const compileEffectSchema = {
   effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
-  effects: z.string().optional().describe('CSV of effect IDs or glob patterns'),
+  effects: z.string().optional().describe('CSV of effect IDs'),
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
 }
 
