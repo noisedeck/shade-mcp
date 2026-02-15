@@ -1,11 +1,32 @@
 import type { Backend } from '../config.js'
 
+export interface ViewerGlobals {
+  canvasRenderer: string
+  renderingPipeline: string
+  currentBackend: string
+  currentEffect: string
+  setPaused: string
+  setPausedTime: string
+  frameCount: string
+}
+
+export const DEFAULT_GLOBALS: ViewerGlobals = {
+  canvasRenderer: '__shadeCanvasRenderer',
+  renderingPipeline: '__shadeRenderingPipeline',
+  currentBackend: '__shadeCurrentBackend',
+  currentEffect: '__shadeCurrentEffect',
+  setPaused: '__shadeSetPaused',
+  setPausedTime: '__shadeSetPausedTime',
+  frameCount: '__shadeFrameCount',
+}
+
 export interface BrowserSessionOptions {
   backend: Backend
   headless?: boolean
   viewerPort?: number
   viewerRoot?: string
   effectsDir?: string
+  globals?: ViewerGlobals
 }
 
 export interface ImageMetrics {
