@@ -22,11 +22,11 @@ export function resolveEffectIds(
 
   const found: string[] = []
   try {
-    const namespaces = readdirSync(effectsDir)
+    const namespaces = readdirSync(effectsDir).filter(n => !n.startsWith('.'))
     for (const ns of namespaces) {
       const nsDir = join(effectsDir, ns)
       if (!statSync(nsDir).isDirectory()) continue
-      const effects = readdirSync(nsDir)
+      const effects = readdirSync(nsDir).filter(n => !n.startsWith('.'))
       for (const effect of effects) {
         const effectDir = join(nsDir, effect)
         if (!statSync(effectDir).isDirectory()) continue

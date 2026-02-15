@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 
@@ -8,6 +8,10 @@ describe('resolveEffectIds', () => {
   beforeEach(() => {
     vi.unstubAllEnvs()
     vi.resetModules()
+    rmSync(tmpEffects, { recursive: true, force: true })
+  })
+
+  afterAll(() => {
     rmSync(tmpEffects, { recursive: true, force: true })
   })
 
