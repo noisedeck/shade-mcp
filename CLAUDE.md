@@ -12,7 +12,7 @@ npm test         # vitest
 ## Architecture
 
 - `src/index.ts` — Entry point. Registers 18 tools with McpServer, starts stdio transport.
-- `src/config.ts` — Config from env vars (SHADE_EFFECTS_DIR, SHADE_VIEWER_PORT, SHADE_BACKEND, SHADE_PROJECT_ROOT).
+- `src/config.ts` — Config from env vars (SHADE_EFFECTS_DIR, SHADE_VIEWER_PORT, SHADE_VIEWER_ROOT, SHADE_BACKEND, SHADE_PROJECT_ROOT).
 - `src/ai/provider.ts` — AI abstraction. Anthropic-first, OpenAI fallback. Reads API keys from env or dotfiles.
 - `src/formats/` — Effect definition parsers. Auto-detects definition.json (preferred) vs definition.js (regex extraction).
 - `src/harness/` — Browser automation. `server-manager.ts` (ref-counted HTTP server), `browser-session.ts` (Playwright lifecycle), `pixel-reader.ts` (image metrics).
@@ -49,4 +49,4 @@ This project distills tools from three sibling repositories:
 
 ## Viewer
 
-`viewer/index.html` is a minimal rendering page that loads the vendored noisemaker runtime. It exposes `window.__shade*` globals for browser harness access. Run `bash scripts/setup.sh` to vendor the runtime from `../noisemaker`.
+shade-mcp does not bundle a viewer. Consumers must provide one via `viewerRoot` (or `SHADE_VIEWER_ROOT` env var). The viewer must expose `window.__shade*` globals (or custom globals via `ViewerGlobals`) for browser harness access.

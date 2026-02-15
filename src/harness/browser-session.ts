@@ -51,7 +51,7 @@ export class BrowserSession {
       backend: opts.backend,
       headless: opts.headless !== false,
       viewerPort: opts.viewerPort ?? config.viewerPort,
-      viewerRoot: opts.viewerRoot ?? resolve(config.projectRoot, 'viewer'),
+      viewerRoot: opts.viewerRoot ?? process.env.SHADE_VIEWER_ROOT ?? resolve(config.projectRoot, 'viewer'),
       effectsDir: opts.effectsDir ?? config.effectsDir
     }
   }
