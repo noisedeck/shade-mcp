@@ -61,6 +61,16 @@ export function resolveEffectIds(
   )
 }
 
+export function resolveEffectDir(effectId: string, effectsDir: string): string {
+  // Flat layout: effectsDir itself is the effect
+  const dirName = basename(effectsDir) || 'effect'
+  if (effectId === dirName &&
+    (existsSync(join(effectsDir, 'definition.json')) || existsSync(join(effectsDir, 'definition.js')))) {
+    return effectsDir
+  }
+  return join(effectsDir, ...effectId.split('/'))
+}
+
 export function matchEffects(allEffects: string[], pattern: string): string[] {
   if (!pattern.includes('*')) {
     return allEffects.filter(e => e === pattern)

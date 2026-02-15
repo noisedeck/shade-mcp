@@ -3,6 +3,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, basename } from 'node:path'
 import { getConfig } from '../../config.js'
+import { resolveEffectDir } from '../resolve-effects.js'
 
 export const compareShadersSchema = {
   effect_id: z.string().describe('Effect ID (e.g., "synth/noise")'),
@@ -46,7 +47,7 @@ function extractUniforms(source: string, lang: 'glsl' | 'wgsl'): string[] {
 
 export async function compareShaders(effectId: string): Promise<any> {
   const config = getConfig()
-  const effectDir = join(config.effectsDir, ...effectId.split('/'))
+  const effectDir = resolveEffectDir(effectId, config.effectsDir)
   const glslDir = join(effectDir, 'glsl')
   const wgslDir = join(effectDir, 'wgsl')
 

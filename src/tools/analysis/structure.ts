@@ -4,6 +4,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, basename } from 'node:path'
 import { loadEffectDefinition } from '../../formats/index.js'
 import { getConfig } from '../../config.js'
+import { resolveEffectDir } from '../resolve-effects.js'
 
 export const checkEffectStructureSchema = {
   effect_id: z.string().describe('Effect ID (e.g., "synth/noise")'),
@@ -15,7 +16,7 @@ function checkCamelCase(name: string): boolean {
 
 export async function checkEffectStructure(effectId: string): Promise<any> {
   const config = getConfig()
-  const effectDir = join(config.effectsDir, ...effectId.split('/'))
+  const effectDir = resolveEffectDir(effectId, config.effectsDir)
 
   if (!existsSync(effectDir)) {
     return { status: 'error', error: `Effect directory not found: ${effectDir}` }

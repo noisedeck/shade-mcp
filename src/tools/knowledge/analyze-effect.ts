@@ -4,6 +4,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadEffectDefinition } from '../../formats/index.js'
 import { getConfig } from '../../config.js'
+import { resolveEffectDir } from '../resolve-effects.js'
 
 export const analyzeEffectSchema = {
   effect_id: z.string().describe('Effect ID (e.g., "synth/noise")'),
@@ -16,7 +17,7 @@ export function registerAnalyzeEffect(server: McpServer): void {
     analyzeEffectSchema,
     async (args: any) => {
       const config = getConfig()
-      const effectDir = join(config.effectsDir, ...args.effect_id.split('/'))
+      const effectDir = resolveEffectDir(args.effect_id, config.effectsDir)
 
       if (!existsSync(effectDir)) {
         return { content: [{ type: 'text', text: JSON.stringify({ error: `Effect not found: ${args.effect_id}` }) }] }

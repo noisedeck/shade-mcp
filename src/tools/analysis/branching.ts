@@ -4,6 +4,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { getAIProvider, callAI, NO_AI_KEY_MESSAGE } from '../../ai/provider.js'
 import { getConfig } from '../../config.js'
+import { resolveEffectDir } from '../resolve-effects.js'
 
 export const analyzeBranchingSchema = {
   effect_id: z.string().describe('Effect ID (e.g., "synth/noise")'),
@@ -15,7 +16,7 @@ export async function analyzeBranching(effectId: string, backend: string): Promi
   const ai = getAIProvider({ projectRoot: config.projectRoot })
   if (!ai) return { status: 'error', error: NO_AI_KEY_MESSAGE }
 
-  const effectDir = join(config.effectsDir, ...effectId.split('/'))
+  const effectDir = resolveEffectDir(effectId, config.effectsDir)
   const shaderDir = join(effectDir, backend === 'webgpu' ? 'wgsl' : 'glsl')
   const ext = backend === 'webgpu' ? '.wgsl' : '.glsl'
 

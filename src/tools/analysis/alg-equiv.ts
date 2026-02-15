@@ -4,6 +4,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, basename } from 'node:path'
 import { getAIProvider, callAI, NO_AI_KEY_MESSAGE } from '../../ai/provider.js'
 import { getConfig } from '../../config.js'
+import { resolveEffectDir } from '../resolve-effects.js'
 
 export const checkAlgEquivSchema = {
   effect_id: z.string().describe('Effect ID (e.g., "synth/noise")'),
@@ -14,7 +15,7 @@ export async function checkAlgEquiv(effectId: string): Promise<any> {
   const ai = getAIProvider({ projectRoot: config.projectRoot })
   if (!ai) return { status: 'error', error: NO_AI_KEY_MESSAGE }
 
-  const effectDir = join(config.effectsDir, ...effectId.split('/'))
+  const effectDir = resolveEffectDir(effectId, config.effectsDir)
   const glslDir = join(effectDir, 'glsl')
   const wgslDir = join(effectDir, 'wgsl')
 

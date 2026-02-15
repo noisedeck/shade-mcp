@@ -17,9 +17,11 @@ export { benchmarkEffectFPS } from '../tools/browser/benchmark.js'
 export { testNoPassthrough } from '../tools/browser/passthrough.js'
 export { testPixelParity } from '../tools/browser/parity.js'
 export { testUniformResponsiveness } from '../tools/browser/uniforms.js'
+export { runDslProgram } from '../tools/browser/dsl.js'
 
 // Analysis operations (on-disk, no AI dependency)
 export { checkEffectStructure } from '../tools/analysis/structure.js'
+export { compareShaders } from '../tools/analysis/compare.js'
 
 // Utilities
-export { resolveEffectIds, matchEffects } from '../tools/resolve-effects.js'
+export { resolveEffectIds, resolveEffectDir, matchEffects } from '../tools/resolve-effects.js'
