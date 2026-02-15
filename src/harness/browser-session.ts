@@ -54,7 +54,7 @@ export class BrowserSession {
   async setup(): Promise<void> {
     if (this._isSetup) throw new Error('Session already set up. Call teardown() first.')
 
-    this.baseUrl = await acquireServer(this.options.viewerPort, this.options.viewerRoot)
+    this.baseUrl = await acquireServer(this.options.viewerPort, this.options.viewerRoot, this.options.effectsDir)
 
     this.browser = await chromium.launch(
       getBrowserLaunchOptions(this.options.headless, this.options.backend)
