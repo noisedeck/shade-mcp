@@ -9,6 +9,7 @@ export const testPixelParitySchema = {
   effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
   effects: z.string().optional().describe('CSV of effect IDs'),
   epsilon: z.number().optional().default(1).describe('Allowed per-channel difference (0-255)'),
+  seed: z.number().optional().default(42).describe('Random seed for reproducible noise'),
 }
 
 // Capture pixels from the canvas, handling both WebGL and WebGPU backends.
@@ -55,9 +56,10 @@ function capturePixels(globals) {
 export async function testPixelParity(
   session: BrowserSession,
   effectId: string,
-  options: { epsilon?: number } = {},
+  options: { epsilon?: number; seed?: number } = {},
 ): Promise<ParityResult> {
   const epsilon = options.epsilon ?? 1
+  const seed = options.seed ?? 42
 
   // Capture with WebGL2
   await session.setBackend('webgl2')
@@ -72,12 +74,20 @@ export async function testPixelParity(
     return t.includes('loaded') || t.includes('compiled') || t.includes('ready')
   }, { timeout: 30000 })
 
-  // Pause and render at time=0
-  await session.page!.evaluate((globals) => {
+  // Pause, set seed, and render at time=0
+  await session.page!.evaluate(({ globals, seed }) => {
     const w = window as any
     if (w[globals.setPaused]) w[globals.setPaused](true)
     if (w[globals.setPausedTime]) w[globals.setPausedTime](0)
-  }, session.globals)
+    const pipeline = w[globals.renderingPipeline]
+    if (pipeline) {
+      if (pipeline.globalUniforms) pipeline.globalUniforms.seed = seed
+      const passes = pipeline.graph?.passes || []
+      for (const pass of passes) {
+        if (pass.uniforms) pass.uniforms.seed = seed
+      }
+    }
+  }, { globals: session.globals, seed })
 
   const glslPixels = await session.page!.evaluate(
     new Function('globals', CAPTURE_PIXELS_FN + 'return capturePixels(globals);') as (g: any) => any,
@@ -91,10 +101,18 @@ export async function testPixelParity(
   // Switch to WebGPU and capture
   await session.setBackend('webgpu')
 
-  await session.page!.evaluate((globals) => {
+  await session.page!.evaluate(({ globals, seed }) => {
     const w = window as any
     if (w[globals.setPausedTime]) w[globals.setPausedTime](0)
-  }, session.globals)
+    const pipeline = w[globals.renderingPipeline]
+    if (pipeline) {
+      if (pipeline.globalUniforms) pipeline.globalUniforms.seed = seed
+      const passes = pipeline.graph?.passes || []
+      for (const pass of passes) {
+        if (pass.uniforms) pass.uniforms.seed = seed
+      }
+    }
+  }, { globals: session.globals, seed })
 
   const wgslPixels = await session.page!.evaluate(
     new Function('globals', CAPTURE_PIXELS_FN + 'return capturePixels(globals);') as (g: any) => any,
@@ -154,7 +172,7 @@ export function registerTestPixelParity(server: McpServer): void {
         const results = []
         for (const id of effectIds) {
           try {
-            results.push({ effect_id: id, ...await testPixelParity(session, id, { epsilon: args.epsilon }) })
+            results.push({ effect_id: id, ...await testPixelParity(session, id, { epsilon: args.epsilon, seed: args.seed }) })
           } catch (err) {
             results.push({ effect_id: id, status: 'error', error: err instanceof Error ? err.message : String(err) })
           }

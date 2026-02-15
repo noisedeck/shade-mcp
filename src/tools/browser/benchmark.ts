@@ -11,18 +11,24 @@ export const benchmarkEffectFPSSchema = {
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
   target_fps: z.number().optional().default(60).describe('Target FPS'),
   duration_seconds: z.number().optional().default(5).describe('Benchmark duration in seconds'),
+  resolution: z.tuple([z.number(), z.number()]).optional().describe('Viewport resolution [width, height]'),
 }
 
 export async function benchmarkEffectFPS(
   session: BrowserSession,
   effectId: string,
-  options: { targetFps?: number; durationSeconds?: number } = {},
+  options: { targetFps?: number; durationSeconds?: number; resolution?: [number, number] } = {},
 ): Promise<BenchmarkResult> {
   const targetFps = options.targetFps ?? 60
   const duration = options.durationSeconds ?? 5
 
   return session.runWithConsoleCapture(async () => {
     const page = session.page!
+
+    // Set viewport resolution if specified
+    if (options.resolution) {
+      await page.setViewportSize({ width: options.resolution[0], height: options.resolution[1] })
+    }
 
     // Select effect
     await page.evaluate((id) => {
@@ -118,6 +124,7 @@ export function registerBenchmarkEffectFPS(server: McpServer): void {
             results.push({ effect_id: id, ...await benchmarkEffectFPS(session, id, {
               targetFps: args.target_fps,
               durationSeconds: args.duration_seconds,
+              resolution: args.resolution,
             }) })
           } catch (err) {
             results.push({ effect_id: id, status: 'error', error: err instanceof Error ? err.message : String(err) })

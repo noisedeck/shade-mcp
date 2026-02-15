@@ -12,15 +12,22 @@ export const renderEffectFrameSchema = {
   warmup_frames: z.number().optional().default(10).describe('Frames to wait before capture'),
   capture_image: z.boolean().optional().default(false).describe('Capture PNG data URI'),
   uniforms: z.record(z.number()).optional().describe('Uniform overrides'),
+  time: z.number().optional().describe('Pause and render at specific time value (seconds)'),
+  resolution: z.tuple([z.number(), z.number()]).optional().describe('Viewport resolution [width, height]'),
 }
 
 export async function renderEffectFrame(
   session: BrowserSession,
   effectId: string,
-  options: { warmupFrames?: number; captureImage?: boolean; uniforms?: Record<string, number> } = {},
+  options: { warmupFrames?: number; captureImage?: boolean; uniforms?: Record<string, number>; time?: number; resolution?: [number, number] } = {},
 ): Promise<RenderResult> {
   return session.runWithConsoleCapture(async () => {
     const page = session.page!
+
+    // Set viewport resolution if specified
+    if (options.resolution) {
+      await page.setViewportSize({ width: options.resolution[0], height: options.resolution[1] })
+    }
 
     // Select and compile effect
     await page.evaluate((id) => {
@@ -45,6 +52,15 @@ export async function renderEffectFrame(
           else if (pipeline.globalUniforms) pipeline.globalUniforms[k] = v
         }
       }, { unis: options.uniforms, globals: session.globals })
+    }
+
+    // If time is specified, pause and set time
+    if (options.time !== undefined) {
+      await page.evaluate(({ time, globals }) => {
+        const w = window as any
+        if (w[globals.setPaused]) w[globals.setPaused](true)
+        if (w[globals.setPausedTime]) w[globals.setPausedTime](time)
+      }, { time: options.time, globals: session.globals })
     }
 
     // Wait for warmup frames
@@ -154,6 +170,14 @@ export async function renderEffectFrame(
       }
     }, { captureImage: options.captureImage ?? false, globals: session.globals })
 
+    // Unpause if we paused for a specific time
+    if (options.time !== undefined) {
+      await page.evaluate((globals) => {
+        const w = window as any
+        if (w[globals.setPaused]) w[globals.setPaused](false)
+      }, session.globals)
+    }
+
     return result as RenderResult
   })
 }
@@ -176,6 +200,8 @@ export function registerRenderEffectFrame(server: McpServer): void {
               warmupFrames: args.warmup_frames,
               captureImage: args.capture_image,
               uniforms: args.uniforms,
+              time: args.time,
+              resolution: args.resolution,
             }) })
           } catch (err) {
             results.push({ effect_id: id, status: 'error', error: err instanceof Error ? err.message : String(err) })
