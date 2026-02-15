@@ -63,7 +63,11 @@ export function registerDescribeEffectFrame(server: McpServer): void {
         await session.setup()
         const results = []
         for (const id of effectIds) {
-          results.push(await describeEffectFrame(session, id, args.prompt))
+          try {
+            results.push({ effect_id: id, ...await describeEffectFrame(session, id, args.prompt) })
+          } catch (err) {
+            results.push({ effect_id: id, status: 'error', error: err instanceof Error ? err.message : String(err) })
+          }
         }
         return { content: [{ type: 'text', text: JSON.stringify(results.length === 1 ? results[0] : results, null, 2) }] }
       } finally {

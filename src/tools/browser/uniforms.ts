@@ -138,7 +138,11 @@ export function registerTestUniformResponsiveness(server: McpServer): void {
         await session.setup()
         const results = []
         for (const id of effectIds) {
-          results.push(await testUniformResponsiveness(session, id))
+          try {
+            results.push({ effect_id: id, ...await testUniformResponsiveness(session, id) })
+          } catch (err) {
+            results.push({ effect_id: id, status: 'error', error: err instanceof Error ? err.message : String(err) })
+          }
         }
         return { content: [{ type: 'text', text: JSON.stringify(results.length === 1 ? results[0] : results, null, 2) }] }
       } finally {
