@@ -107,5 +107,34 @@ describe('server-manager', () => {
       releaseServer()
       expect(getRefCount()).toBe(0)
     })
+
+    it('rejects path traversal attempts', async () => {
+      mkdirSync(tmpDir, { recursive: true })
+      writeFileSync(resolve(tmpDir, 'index.html'), '')
+      mkdirSync(tmpEffects, { recursive: true })
+
+      const url = await acquireServer(testPort, tmpDir, tmpEffects)
+      let blocked = false
+      try {
+        const res = await fetch(`${url}/effects/../../etc/passwd`)
+        blocked = res.status === 403
+      } catch {
+        // Server closing connection on invalid path also counts as blocking
+        blocked = true
+      }
+      expect(blocked).toBe(true)
+    })
+
+    it('strips query strings from URLs', async () => {
+      mkdirSync(tmpDir, { recursive: true })
+      writeFileSync(resolve(tmpDir, 'index.html'), '<h1>test</h1>')
+      mkdirSync(tmpEffects, { recursive: true })
+
+      const url = await acquireServer(testPort, tmpDir, tmpEffects)
+      const res = await fetch(`${url}/index.html?v=123`)
+      expect(res.ok).toBe(true)
+      const text = await res.text()
+      expect(text).toContain('<h1>test</h1>')
+    })
   })
 })
