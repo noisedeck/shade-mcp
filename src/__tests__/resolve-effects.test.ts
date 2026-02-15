@@ -50,6 +50,16 @@ describe('resolveEffectIds', () => {
     expect(() => resolveEffectIds({}, tmpEffects)).toThrow(/specify effect_id/)
   })
 
+  it('auto-detects flat effect layout (effectsDir itself has definition.json)', async () => {
+    mkdirSync(tmpEffects, { recursive: true })
+    writeFileSync(resolve(tmpEffects, 'definition.json'), '{}')
+    const { resolveEffectIds } = await import('../tools/resolve-effects.js')
+    const ids = resolveEffectIds({}, tmpEffects)
+    expect(ids).toHaveLength(1)
+    // The ID should be the directory name
+    expect(ids[0]).toBe('shade-mcp-test-resolve')
+  })
+
   it('throws when no effect_id and no effects directory', async () => {
     const { resolveEffectIds } = await import('../tools/resolve-effects.js')
     expect(() => resolveEffectIds({}, tmpEffects)).toThrow()

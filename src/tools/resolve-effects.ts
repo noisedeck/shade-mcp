@@ -20,6 +20,14 @@ export function resolveEffectIds(
     throw new Error(`Effects directory not found: ${effectsDir}. Specify effect_id or set SHADE_EFFECTS_DIR.`)
   }
 
+  // Check if effectsDir itself is an effect (flat layout)
+  if (existsSync(join(effectsDir, 'definition.json')) || existsSync(join(effectsDir, 'definition.js'))) {
+    // Use the directory name as the effect ID
+    const dirName = effectsDir.split('/').filter(Boolean).pop() || 'effect'
+    console.warn(`[shade-mcp] Auto-detected flat effect layout: ${dirName}`)
+    return [dirName]
+  }
+
   const found: string[] = []
   try {
     const namespaces = readdirSync(effectsDir).filter(n => !n.startsWith('.'))
