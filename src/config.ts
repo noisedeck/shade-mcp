@@ -9,6 +9,8 @@ export interface Config {
   viewerPort: number
   defaultBackend: Backend
   projectRoot: string
+  globalsPrefix: string | undefined
+  viewerPath: string | undefined
 }
 
 function parseBackend(value: string | undefined): Backend {
@@ -24,6 +26,8 @@ export function getConfig(): Config {
     effectsDir: process.env.SHADE_EFFECTS_DIR || resolve(projectRoot, 'effects'),
     viewerPort: parseInt(process.env.SHADE_VIEWER_PORT || '4173', 10),
     defaultBackend: parseBackend(process.env.SHADE_BACKEND),
-    projectRoot
+    projectRoot,
+    globalsPrefix: process.env.SHADE_GLOBALS_PREFIX || undefined,
+    viewerPath: process.env.SHADE_VIEWER_PATH || undefined,
   }
 }

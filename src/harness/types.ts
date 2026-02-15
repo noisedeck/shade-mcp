@@ -20,6 +20,18 @@ export const DEFAULT_GLOBALS: ViewerGlobals = {
   frameCount: '__shadeFrameCount',
 }
 
+export function globalsFromPrefix(prefix: string): ViewerGlobals {
+  return {
+    canvasRenderer: `${prefix}CanvasRenderer`,
+    renderingPipeline: `${prefix}RenderingPipeline`,
+    currentBackend: `${prefix}CurrentBackend`,
+    currentEffect: `${prefix}CurrentEffect`,
+    setPaused: `${prefix}SetPaused`,
+    setPausedTime: `${prefix}SetPausedTime`,
+    frameCount: `${prefix}FrameCount`,
+  }
+}
+
 export interface BrowserSessionOptions {
   backend: Backend
   headless?: boolean

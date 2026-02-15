@@ -8,7 +8,7 @@ export type {
   BrowserSessionOptions, ViewerGlobals,
   ImageMetrics, CompileResult, RenderResult, BenchmarkResult, ParityResult
 } from './types.js'
-export { DEFAULT_GLOBALS } from './types.js'
+export { DEFAULT_GLOBALS, globalsFromPrefix } from './types.js'
 
 // Browser operations
 export { compileEffect } from '../tools/browser/compile.js'

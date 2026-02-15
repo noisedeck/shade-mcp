@@ -2,7 +2,7 @@ import { chromium, type Browser, type BrowserContext, type Page, type ConsoleMes
 import { resolve } from 'node:path'
 import type { Backend } from '../config.js'
 import type { BrowserSessionOptions, CompileResult, RenderResult, BenchmarkResult, ImageMetrics, ViewerGlobals } from './types.js'
-import { DEFAULT_GLOBALS } from './types.js'
+import { DEFAULT_GLOBALS, globalsFromPrefix } from './types.js'
 import { acquireServer, releaseServer, getServerUrl } from './server-manager.js'
 import { getConfig } from '../config.js'
 
@@ -45,8 +45,8 @@ export class BrowserSession {
 
   constructor(opts: BrowserSessionOptions) {
     const config = getConfig()
-    this.globals = opts.globals ?? DEFAULT_GLOBALS
-    this.viewerPath = opts.viewerPath ?? '/'
+    this.globals = opts.globals ?? (config.globalsPrefix ? globalsFromPrefix(config.globalsPrefix) : DEFAULT_GLOBALS)
+    this.viewerPath = opts.viewerPath ?? config.viewerPath ?? '/'
     this.options = {
       backend: opts.backend,
       headless: opts.headless !== false,
