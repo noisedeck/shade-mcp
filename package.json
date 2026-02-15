@@ -28,6 +28,10 @@
     "./analysis": {
       "import": "./dist/analysis/index.js",
       "types": "./dist/analysis/index.d.ts"
+    },
+    "./knowledge": {
+      "import": "./dist/knowledge/index.js",
+      "types": "./dist/knowledge/index.d.ts"
     }
   },
   "scripts": {

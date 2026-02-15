@@ -7,6 +7,7 @@ export default defineConfig({
     'formats/index': 'src/formats/index.ts',
     'ai/provider': 'src/ai/provider.ts',
     'analysis/index': 'src/analysis/index.ts',
+    'knowledge/index': 'src/knowledge/index.ts',
   },
   format: ['esm'],
   target: 'node18',
