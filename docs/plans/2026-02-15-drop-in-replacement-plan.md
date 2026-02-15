@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Make shade-mcp a drop-in replacement for the MCP servers in py-noisemaker and portable by adding a custom HTTP server, batch effect parameters, and single-effect auto-detection.
+**Goal:** Make shade-mcp a drop-in replacement for the MCP servers in noisemaker and portable by adding a custom HTTP server, batch effect parameters, and single-effect auto-detection.
 
 **Architecture:** Replace the `npx serve` child process with an in-process Node HTTP server that mounts the viewer at `/` and the effects directory at `/effects/`. Add a shared `resolveEffectIds()` helper for all browser tools. Auto-detect single-effect mode when effect_id is omitted.
 
@@ -503,7 +503,7 @@ No longer needed — replaced with in-process HTTP server."
 
 ### Task 5: Manual integration test
 
-Test shade-mcp against the portable and py-noisemaker effects directories.
+Test shade-mcp against the portable and noisemaker effects directories.
 
 **Step 1: Test with portable**
 
@@ -513,10 +513,10 @@ SHADE_EFFECTS_DIR=../portable/effects SHADE_PROJECT_ROOT=../portable node dist/i
 
 Verify: The server starts without error. If effects exist, `generateManifest` and `compileEffect` should work when called via MCP.
 
-**Step 2: Test with py-noisemaker**
+**Step 2: Test with noisemaker**
 
 ```bash
-SHADE_EFFECTS_DIR=../py-noisemaker/shaders/effects SHADE_PROJECT_ROOT=../py-noisemaker node dist/index.js
+SHADE_EFFECTS_DIR=../noisemaker/shaders/effects SHADE_PROJECT_ROOT=../noisemaker node dist/index.js
 ```
 
 Verify: Same as above.

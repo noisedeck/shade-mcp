@@ -1,6 +1,6 @@
 # Setting Up shade-mcp for Your Project
 
-shade-mcp replaces the built-in MCP servers in **py-noisemaker** and **portable**. This guide walks through setup for each project in VS Code and Claude Code.
+shade-mcp replaces the built-in MCP servers in **noisemaker** and **portable**. This guide walks through setup for each project in VS Code and Claude Code.
 
 ## Prerequisites
 
@@ -20,13 +20,13 @@ Verify it built:
 ls dist/index.js  # should exist
 ```
 
-## py-noisemaker
+## noisemaker
 
-Effects live at `py-noisemaker/shaders/effects/` in nested `namespace/effect/` layout.
+Effects live at `noisemaker/shaders/effects/` in nested `namespace/effect/` layout.
 
 ### VS Code (Copilot)
 
-Create or edit `py-noisemaker/.vscode/mcp.json`:
+Create or edit `noisemaker/.vscode/mcp.json`:
 
 ```json
 {
@@ -36,8 +36,8 @@ Create or edit `py-noisemaker/.vscode/mcp.json`:
       "command": "node",
       "args": ["/Users/aayars/source/shade-mcp/dist/index.js"],
       "env": {
-        "SHADE_EFFECTS_DIR": "/Users/aayars/source/py-noisemaker/shaders/effects",
-        "SHADE_PROJECT_ROOT": "/Users/aayars/source/py-noisemaker"
+        "SHADE_EFFECTS_DIR": "/Users/aayars/source/noisemaker/shaders/effects",
+        "SHADE_PROJECT_ROOT": "/Users/aayars/source/noisemaker"
       }
     }
   }
@@ -57,8 +57,8 @@ Add to `~/.claude/settings.json` (or project-level `.claude/settings.local.json`
       "command": "node",
       "args": ["/Users/aayars/source/shade-mcp/dist/index.js"],
       "env": {
-        "SHADE_EFFECTS_DIR": "/Users/aayars/source/py-noisemaker/shaders/effects",
-        "SHADE_PROJECT_ROOT": "/Users/aayars/source/py-noisemaker"
+        "SHADE_EFFECTS_DIR": "/Users/aayars/source/noisemaker/shaders/effects",
+        "SHADE_PROJECT_ROOT": "/Users/aayars/source/noisemaker"
       }
     }
   }

@@ -1,12 +1,12 @@
-# Drop-in MCP Replacement for py-noisemaker and portable
+# Drop-in MCP Replacement for noisemaker and portable
 
 ## Problem
 
-shade-mcp has the right tool names and behavior to replace the MCP servers in `../py-noisemaker` (12 tools) and `../portable` (11 tools), but can't currently serve effects from external project directories.
+shade-mcp has the right tool names and behavior to replace the MCP servers in `../noisemaker` (12 tools) and `../portable` (11 tools), but can't currently serve effects from external project directories.
 
 ## Gaps
 
-1. **HTTP server** — `npx serve` serves a single root (`viewer/`). Effects live in the target project (e.g. `../portable/effects/`, `../py-noisemaker/shaders/effects/`).
+1. **HTTP server** — `npx serve` serves a single root (`viewer/`). Effects live in the target project (e.g. `../portable/effects/`, `../noisemaker/shaders/effects/`).
 2. **Batch parameters** — Old noisemaker MCP supports `effects` (CSV/glob) on all browser tools. shade-mcp only supports it on `compileEffect`.
 3. **Single-effect auto-detection** — portable's tools don't require `effect_id` because it's a single-effect project. shade-mcp requires it everywhere.
 4. **Viewer routing** — The viewer fetches `/effects/manifest.json` and `/effects/{ns}/{effect}/...` relative to HTTP root.
@@ -64,10 +64,10 @@ SHADE_EFFECTS_DIR=../portable/effects
 SHADE_PROJECT_ROOT=../portable
 ```
 
-### py-noisemaker
+### noisemaker
 ```
-SHADE_EFFECTS_DIR=../py-noisemaker/shaders/effects
-SHADE_PROJECT_ROOT=../py-noisemaker
+SHADE_EFFECTS_DIR=../noisemaker/shaders/effects
+SHADE_PROJECT_ROOT=../noisemaker
 ```
 
 ## Success criteria

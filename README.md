@@ -1,6 +1,6 @@
 # shade-mcp
 
-Best-of-breed MCP server for shader effect development. 18 tools for compiling, rendering, testing, analyzing, searching, and understanding shader effects.
+MCP server for shader effect development.
 
 Distilled from three projects:
 - **[noisemaker](https://github.com/aayars/noisemaker)** — browser-based shader testing
