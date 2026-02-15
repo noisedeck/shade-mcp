@@ -27,6 +27,6 @@ jobs:
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ steps.app-token.outputs.token }}
-          repository: aayars/py-noisemaker
+          repository: noisedeck/noisemaker
           event-type: shade-mcp-updated
           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
