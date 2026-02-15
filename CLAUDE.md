@@ -12,7 +12,7 @@ npm test         # vitest
 ## Architecture
 
 - `src/index.ts` — Entry point. Registers 18 tools with McpServer, starts stdio transport.
-- `src/config.ts` — Config from env vars (SHADE_EFFECTS_DIR, SHADE_VIEWER_PORT, SHADE_VIEWER_ROOT, SHADE_BACKEND, SHADE_PROJECT_ROOT).
+- `src/config.ts` — Config from env vars (SHADE_EFFECTS_DIR, SHADE_VIEWER_PORT, SHADE_VIEWER_ROOT, SHADE_VIEWER_PATH, SHADE_BACKEND, SHADE_PROJECT_ROOT, SHADE_GLOBALS_PREFIX).
 - `src/ai/provider.ts` — AI abstraction. Anthropic-first, OpenAI fallback. Reads API keys from env or dotfiles.
 - `src/formats/` — Effect definition parsers. Auto-detects definition.json (preferred) vs definition.js (regex extraction).
 - `src/harness/` — Browser automation. `server-manager.ts` (ref-counted HTTP server), `browser-session.ts` (Playwright lifecycle), `pixel-reader.ts` (image metrics).
@@ -40,13 +40,49 @@ export function registerMyTool(server: any): void {
 }
 ```
 
+## Per-Project Setup
+
+shade-mcp is configured entirely via env vars. Each consumer project points its MCP client at shade-mcp's binary with project-specific env vars.
+
+**VS Code** (`.vscode/mcp.json`):
+```json
+{
+  "servers": {
+    "shader-tools": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/path/to/shade-mcp/dist/index.js"],
+      "env": {
+        "SHADE_EFFECTS_DIR": "${workspaceFolder}/effects",
+        "SHADE_PROJECT_ROOT": "${workspaceFolder}",
+        "SHADE_VIEWER_ROOT": "${workspaceFolder}",
+        "SHADE_VIEWER_PATH": "/viewer/index.html",
+        "SHADE_GLOBALS_PREFIX": "__myProject"
+      }
+    }
+  }
+}
+```
+
+**Environment Variables:**
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `SHADE_EFFECTS_DIR` | Yes | `./effects` | Directory containing effect definitions |
+| `SHADE_PROJECT_ROOT` | No | cwd | Project root (for .anthropic/.openai key files) |
+| `SHADE_VIEWER_ROOT` | No | `$PROJECT_ROOT/viewer` | HTTP server root directory |
+| `SHADE_VIEWER_PATH` | No | `/` | Path to viewer index.html within viewer root |
+| `SHADE_VIEWER_PORT` | No | `4173` | HTTP server port |
+| `SHADE_GLOBALS_PREFIX` | No | `__shade` | Window globals prefix (e.g., `__portable` → `__portableCanvasRenderer`) |
+| `SHADE_BACKEND` | No | `webgl2` | Default rendering backend |
+
 ## Source Projects
 
-This project distills tools from three sibling repositories:
-- `../noisemaker` — Browser-based shader testing (12 MCP tools)
-- `../portable` — Portable effect authoring (11 MCP tools)
-- `../shade` — AI-native shader editor (19 Claude tools + 7 MCP tools)
+Consumer projects that use shade-mcp's built-in MCP server:
+- `../noisemaker` — Browser-based shader testing
+- `../portable` — Portable effect authoring
+- `../shade` — AI-native shader editor
 
 ## Viewer
 
-shade-mcp does not bundle a viewer. Consumers must provide one via `viewerRoot` (or `SHADE_VIEWER_ROOT` env var). The viewer must expose `window.__shade*` globals (or custom globals via `ViewerGlobals`) for browser harness access.
+shade-mcp does not bundle a viewer. Consumers must provide one via `SHADE_VIEWER_ROOT` env var (or `viewerRoot` option in library mode). The viewer must expose window globals matching the configured prefix (default `__shade*`, customizable via `SHADE_GLOBALS_PREFIX`).
