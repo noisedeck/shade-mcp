@@ -18,10 +18,8 @@ export { testNoPassthrough } from '../tools/browser/passthrough.js'
 export { testPixelParity } from '../tools/browser/parity.js'
 export { testUniformResponsiveness } from '../tools/browser/uniforms.js'
 
-// Analysis operations
+// Analysis operations (on-disk, no AI dependency)
 export { checkEffectStructure } from '../tools/analysis/structure.js'
-export { checkAlgEquiv } from '../tools/analysis/alg-equiv.js'
-export { analyzeBranching } from '../tools/analysis/branching.js'
 
 // Utilities
 export { resolveEffectIds, matchEffects } from '../tools/resolve-effects.js'

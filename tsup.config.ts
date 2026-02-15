@@ -6,11 +6,13 @@ export default defineConfig({
     'harness/index': 'src/harness/index.ts',
     'formats/index': 'src/formats/index.ts',
     'ai/provider': 'src/ai/provider.ts',
+    'analysis/index': 'src/analysis/index.ts',
   },
   format: ['esm'],
   target: 'node18',
   outDir: 'dist',
   clean: true,
   sourcemap: true,
+  splitting: false,
   dts: true,
 })

@@ -34,9 +34,13 @@ describe('harness barrel exports', () => {
     expect(mod.testUniformResponsiveness).toBeDefined()
   })
 
-  it('exports analysis operations', async () => {
+  it('exports analysis operations (non-AI)', async () => {
     const mod = await import('../../src/harness/index.js')
     expect(mod.checkEffectStructure).toBeDefined()
+  })
+
+  it('exports AI-dependent analysis from analysis barrel', async () => {
+    const mod = await import('../../src/analysis/index.js')
     expect(mod.checkAlgEquiv).toBeDefined()
     expect(mod.analyzeBranching).toBeDefined()
   })

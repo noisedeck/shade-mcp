@@ -24,6 +24,10 @@
     "./ai": {
       "import": "./dist/ai/provider.js",
       "types": "./dist/ai/provider.d.ts"
+    },
+    "./analysis": {
+      "import": "./dist/analysis/index.js",
+      "types": "./dist/analysis/index.d.ts"
     }
   },
   "scripts": {
