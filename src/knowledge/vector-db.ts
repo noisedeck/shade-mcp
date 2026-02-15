@@ -198,10 +198,22 @@ export class ShaderKnowledgeDB {
     return Array.from(cats)
   }
 
-  getStats(): { totalDocuments: number; categories: string[] } {
+  getByCategory(category: string): KnowledgeDocument[] {
+    return Array.from(this.documents.values())
+      .filter(doc => doc.category === category)
+  }
+
+  getStats(): { totalDocuments: number; totalTerms: number; indexed: boolean; categories: Record<string, number> } {
+    const categoryCounts: Record<string, number> = {}
+    for (const doc of this.documents.values()) {
+      const cat = doc.category || 'uncategorized'
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1
+    }
     return {
       totalDocuments: this.documents.size,
-      categories: this.getCategories(),
+      totalTerms: this.documentFrequency.size,
+      indexed: this.indexBuilt,
+      categories: categoryCounts,
     }
   }
 }

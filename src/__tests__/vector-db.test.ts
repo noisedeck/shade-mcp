@@ -61,7 +61,32 @@ describe('ShaderKnowledgeDB', () => {
 
     const stats = db.getStats()
     expect(stats.totalDocuments).toBe(2)
-    expect(stats.categories).toContain('cat1')
-    expect(stats.categories).toContain('cat2')
+    expect(stats.categories).toHaveProperty('cat1')
+    expect(stats.categories).toHaveProperty('cat2')
+  })
+
+  it('getByCategory returns matching documents', () => {
+    const db = new ShaderKnowledgeDB()
+    db.addDocuments([
+      { id: '1', title: 'A', content: 'hello', category: 'dsl', tags: [] },
+      { id: '2', title: 'B', content: 'world', category: 'glsl', tags: [] },
+      { id: '3', title: 'C', content: 'foo', category: 'dsl', tags: [] },
+    ])
+    const dslDocs = db.getByCategory('dsl')
+    expect(dslDocs).toHaveLength(2)
+    expect(dslDocs.map(d => d.id).sort()).toEqual(['1', '3'])
+  })
+
+  it('getStats returns enriched data', () => {
+    const db = new ShaderKnowledgeDB()
+    db.addDocuments([
+      { id: '1', title: 'A', content: 'hello world', category: 'dsl', tags: [] },
+    ])
+    db.buildIndex()
+    const stats = db.getStats()
+    expect(stats.indexed).toBe(true)
+    expect(stats.totalDocuments).toBe(1)
+    expect(stats.totalTerms).toBeGreaterThan(0)
+    expect(stats.categories).toEqual({ dsl: 1 })
   })
 })
