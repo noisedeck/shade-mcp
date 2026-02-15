@@ -1,5 +1,5 @@
 import { readdirSync, existsSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, basename } from 'node:path'
 
 export function resolveEffectIds(
   args: { effect_id?: string; effects?: string },
@@ -23,7 +23,7 @@ export function resolveEffectIds(
   // Check if effectsDir itself is an effect (flat layout)
   if (existsSync(join(effectsDir, 'definition.json')) || existsSync(join(effectsDir, 'definition.js'))) {
     // Use the directory name as the effect ID
-    const dirName = effectsDir.split('/').filter(Boolean).pop() || 'effect'
+    const dirName = basename(effectsDir) || 'effect'
     console.warn(`[shade-mcp] Auto-detected flat effect layout: ${dirName}`)
     return [dirName]
   }

@@ -64,6 +64,35 @@ describe('server-manager', () => {
       expect(res.status).toBe(404)
     })
 
+    it('serves flat layout effects via virtual nested path', async () => {
+      mkdirSync(tmpDir, { recursive: true })
+      writeFileSync(resolve(tmpDir, 'index.html'), '')
+      // Create a flat layout in tmpEffects (definition.json at root)
+      mkdirSync(tmpEffects, { recursive: true })
+      writeFileSync(resolve(tmpEffects, 'definition.json'), '{"name":"flat"}')
+      mkdirSync(resolve(tmpEffects, 'glsl'), { recursive: true })
+      writeFileSync(resolve(tmpEffects, 'glsl/main.glsl'), 'void main(){}')
+
+      const url = await acquireServer(testPort, tmpDir, tmpEffects)
+      // The basename of tmpEffects is the virtual path component
+      const effectName = tmpEffects.split('/').pop()
+
+      // Should serve via virtual nested path
+      const defRes = await fetch(`${url}/effects/${effectName}/definition.json`)
+      expect(defRes.ok).toBe(true)
+      const def = await defRes.json()
+      expect(def.name).toBe('flat')
+
+      const glslRes = await fetch(`${url}/effects/${effectName}/glsl/main.glsl`)
+      expect(glslRes.ok).toBe(true)
+      const glsl = await glslRes.text()
+      expect(glsl).toContain('void main')
+
+      // Should also serve at root /effects/ path
+      const rootDef = await fetch(`${url}/effects/definition.json`)
+      expect(rootDef.ok).toBe(true)
+    })
+
     it('ref-counts correctly', async () => {
       mkdirSync(tmpDir, { recursive: true })
       writeFileSync(resolve(tmpDir, 'index.html'), '')

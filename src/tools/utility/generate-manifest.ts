@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { readdirSync, writeFileSync, existsSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, basename } from 'node:path'
 import { loadEffectDefinition } from '../../formats/index.js'
 import { getConfig } from '../../config.js'
 
@@ -21,6 +21,22 @@ export function registerGenerateManifest(server: McpServer): void {
       }
 
       const manifest: Record<string, any> = {}
+
+      // Flat layout: effectsDir itself is an effect
+      if (existsSync(join(effectsDir, 'definition.json')) || existsSync(join(effectsDir, 'definition.js'))) {
+        try {
+          const def = loadEffectDefinition(effectsDir)
+          const dirName = basename(effectsDir)
+          manifest[dirName] = {
+            name: def.name || def.func,
+            description: def.description || '',
+            tags: def.tags || [],
+            passes: def.passes.length,
+            format: def.format,
+          }
+        } catch { /* skip */ }
+      }
+
       const namespaces = readdirSync(effectsDir)
 
       for (const ns of namespaces) {

@@ -1,6 +1,6 @@
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http'
 import { createReadStream, existsSync, statSync } from 'node:fs'
-import { extname, join, resolve as pathResolve, normalize } from 'node:path'
+import { extname, join, resolve as pathResolve, normalize, basename } from 'node:path'
 
 let httpServer: Server | null = null
 let refCount = 0
@@ -62,6 +62,10 @@ export async function acquireServer(
     return getServerUrl()
   }
 
+  // Detect flat layout (effectsDir itself contains definition.json/js)
+  const isFlatLayout = existsSync(join(effectsDir, 'definition.json')) || existsSync(join(effectsDir, 'definition.js'))
+  const flatEffectName = isFlatLayout ? basename(effectsDir) : null
+
   httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
     const parsedUrl = new URL(req.url || '/', `http://${req.headers.host}`)
     const url = decodeURIComponent(parsedUrl.pathname)
@@ -69,6 +73,17 @@ export async function acquireServer(
     // Route: /effects/* → effectsDir
     if (url.startsWith('/effects/')) {
       const relPath = url.slice('/effects/'.length)
+
+      // Flat layout: /effects/{basename}/* → effectsDir/*
+      if (flatEffectName && relPath.startsWith(flatEffectName + '/')) {
+        const innerPath = relPath.slice(flatEffectName.length + 1)
+        const filePath = safePath(effectsDir, innerPath)
+        if (!filePath) { res.writeHead(403); res.end('Forbidden'); return }
+        serveFile(filePath, res)
+        return
+      }
+
+      // Normal nested layout: /effects/* → effectsDir/*
       const filePath = safePath(effectsDir, relPath)
       if (!filePath) {
         res.writeHead(403)
