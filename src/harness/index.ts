@@ -24,4 +24,4 @@ export { checkAlgEquiv } from '../tools/analysis/alg-equiv.js'
 export { analyzeBranching } from '../tools/analysis/branching.js'
 
 // Utilities
-export { resolveEffectIds } from '../tools/resolve-effects.js'
+export { resolveEffectIds, matchEffects } from '../tools/resolve-effects.js'
