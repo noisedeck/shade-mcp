@@ -60,3 +60,11 @@ export function resolveEffectIds(
     `Multiple effects found (${found.length}). Please specify effect_id or effects parameter. Available: ${found.slice(0, 10).join(', ')}${found.length > 10 ? '...' : ''}`
   )
 }
+
+export function matchEffects(allEffects: string[], pattern: string): string[] {
+  if (!pattern.includes('*')) {
+    return allEffects.filter(e => e === pattern)
+  }
+  const regex = new RegExp('^' + pattern.replace(/\*/g, '[^/]+') + '$')
+  return allEffects.filter(e => regex.test(e))
+}
