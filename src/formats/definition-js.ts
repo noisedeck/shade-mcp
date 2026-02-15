@@ -4,14 +4,14 @@ import type { EffectDefinition, EffectUniform } from './types.js'
 export function parseDefinitionJs(filePath: string, effectDir: string): EffectDefinition {
   const source = readFileSync(filePath, 'utf-8')
 
-  const func = extractString(source, /func:\s*['"](\w+)['"]/) || 'unknown'
-  const name = extractString(source, /name:\s*['"]([^'"]+)['"]/)
-  const namespace = extractString(source, /namespace:\s*['"](\w+)['"]/)
-  const description = extractString(source, /description:\s*['"]([^'"]+)['"]/)
-  const starter = /starter:\s*true/.test(source) ? true : undefined
+  const func = extractString(source, /func\s*[:=]\s*['"](\w+)['"]/) || 'unknown'
+  const name = extractString(source, /name\s*[:=]\s*['"]([^'"]+)['"]/)
+  const namespace = extractString(source, /namespace\s*[:=]\s*['"](\w+)['"]/)
+  const description = extractString(source, /description\s*[:=]\s*['"]([^'"]+)['"]/)
+  const starter = /starter\s*[:=]\s*true/.test(source) ? true : undefined
 
   // Extract tags
-  const tagsMatch = source.match(/tags:\s*\[([^\]]+)\]/)
+  const tagsMatch = source.match(/tags\s*[:=]\s*\[([^\]]+)\]/)
   const tags = tagsMatch
     ? tagsMatch[1].split(',').map(t => t.trim().replace(/['"]/g, '')).filter(Boolean)
     : undefined
@@ -29,7 +29,7 @@ export function parseDefinitionJs(filePath: string, effectDir: string): EffectDe
 
   // Extract globals with type info
   const globals: EffectDefinition['globals'] = {}
-  const globalsMatch = source.match(/globals:\s*\{([\s\S]*?)\n\s*\}/)
+  const globalsMatch = source.match(/globals\s*[:=]\s*\{([\s\S]*?)\n\s*\}/)
   if (globalsMatch) {
     const uniformRegex = /(\w+):\s*(\{[^}]*\})/g
     let uMatch

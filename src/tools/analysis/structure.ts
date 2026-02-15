@@ -63,32 +63,37 @@ export async function checkEffectStructure(effectId: string): Promise<any> {
     }
   }
 
-  // Check shader files
+  // Check shader files (GLSL may use .glsl, .frag, or .vert extensions)
   const glslDir = join(effectDir, 'glsl')
   const wgslDir = join(effectDir, 'wgsl')
-  const glslFiles = existsSync(glslDir) ? readdirSync(glslDir).filter(f => f.endsWith('.glsl')) : []
+  const glslFiles = existsSync(glslDir) ? readdirSync(glslDir).filter(f =>
+    f.endsWith('.glsl') || f.endsWith('.frag') || f.endsWith('.vert')
+  ) : []
   const wgslFiles = existsSync(wgslDir) ? readdirSync(wgslDir).filter(f => f.endsWith('.wgsl')) : []
+
+  // Extract program name from a shader filename (.glsl, .frag, .vert, .wgsl)
+  function programName(filename: string): string {
+    return filename.replace(/\.(glsl|frag|vert|wgsl)$/, '')
+  }
 
   // Referenced programs from passes
   const referencedPrograms = new Set(def.passes.map((p: any) => p.program))
 
   // Unused files
   for (const f of glslFiles) {
-    const name = basename(f, '.glsl')
-    if (!referencedPrograms.has(name)) {
+    if (!referencedPrograms.has(programName(f))) {
       issues.unusedFiles.push(`glsl/${f}`)
     }
   }
   for (const f of wgslFiles) {
-    const name = basename(f, '.wgsl')
-    if (!referencedPrograms.has(name)) {
+    if (!referencedPrograms.has(programName(f))) {
       issues.unusedFiles.push(`wgsl/${f}`)
     }
   }
 
-  // Structural parity: every GLSL should have matching WGSL
-  const glslPrograms = new Set(glslFiles.map(f => basename(f, '.glsl')))
-  const wgslPrograms = new Set(wgslFiles.map(f => basename(f, '.wgsl')))
+  // Structural parity: every GLSL program should have matching WGSL and vice versa
+  const glslPrograms = new Set(glslFiles.map(f => programName(f)))
+  const wgslPrograms = new Set(wgslFiles.map(f => programName(f)))
 
   for (const p of glslPrograms) {
     if (!wgslPrograms.has(p)) {
