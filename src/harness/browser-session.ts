@@ -33,7 +33,8 @@ function getBrowserLaunchOptions(headless: boolean, backend: Backend) {
 }
 
 export class BrowserSession {
-  private options: Required<Omit<BrowserSessionOptions, 'globals'>>
+  private options: Required<Omit<BrowserSessionOptions, 'globals' | 'viewerPath'>>
+  private viewerPath: string
   private browser: Browser | null = null
   private context: BrowserContext | null = null
   public page: Page | null = null
@@ -45,6 +46,7 @@ export class BrowserSession {
   constructor(opts: BrowserSessionOptions) {
     const config = getConfig()
     this.globals = opts.globals ?? DEFAULT_GLOBALS
+    this.viewerPath = opts.viewerPath ?? '/'
     this.options = {
       backend: opts.backend,
       headless: opts.headless !== false,
@@ -91,7 +93,7 @@ export class BrowserSession {
       this.consoleMessages.push({ type: 'pageerror', text: error.message })
     })
 
-    await this.page.goto(`${this.baseUrl}/`, { waitUntil: 'networkidle' })
+    await this.page.goto(`${this.baseUrl}${this.viewerPath}`, { waitUntil: 'networkidle' })
 
     // Wait for renderer to be ready
     const rendererGlobal = this.globals.canvasRenderer

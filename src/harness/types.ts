@@ -25,6 +25,7 @@ export interface BrowserSessionOptions {
   headless?: boolean
   viewerPort?: number
   viewerRoot?: string
+  viewerPath?: string
   effectsDir?: string
   globals?: ViewerGlobals
 }
