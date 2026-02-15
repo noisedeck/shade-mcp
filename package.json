@@ -8,8 +8,27 @@
   "bin": {
     "shade-mcp": "dist/index.js"
   },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./harness": {
+      "import": "./dist/harness/index.js",
+      "types": "./dist/harness/index.d.ts"
+    },
+    "./formats": {
+      "import": "./dist/formats/index.js",
+      "types": "./dist/formats/index.d.ts"
+    },
+    "./ai": {
+      "import": "./dist/ai/provider.js",
+      "types": "./dist/ai/provider.d.ts"
+    }
+  },
   "scripts": {
     "build": "tsup",
+    "postbuild": "node -e \"import{readFileSync as r,writeFileSync as w}from'fs';const f='dist/index.js';w(f,'#!/usr/bin/env node\\n'+r(f,'utf8'))\"",
     "dev": "tsup --watch",
     "start": "node dist/index.js",
     "setup": "playwright install chromium",
