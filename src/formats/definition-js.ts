@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import type { EffectDefinition } from './types.js'
+import type { EffectDefinition, EffectUniform } from './types.js'
 
 export function parseDefinitionJs(filePath: string, effectDir: string): EffectDefinition {
   const source = readFileSync(filePath, 'utf-8')
@@ -47,7 +47,7 @@ export function parseDefinitionJs(filePath: string, effectDir: string): EffectDe
 
       globals[name] = {
         name,
-        type: type as any,
+        type: type as EffectUniform['type'],
         uniform,
         ...(defaultVal !== undefined && { default: defaultVal }),
         ...(min !== undefined && { min }),

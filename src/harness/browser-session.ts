@@ -158,7 +158,7 @@ export class BrowserSession {
     return result
   }
 
-  get backend(): string {
+  get backend(): Backend {
     return this.options.backend
   }
 

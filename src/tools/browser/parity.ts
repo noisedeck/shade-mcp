@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { BrowserSession } from '../../harness/browser-session.js'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { BrowserSession } from '../../harness/browser-session.js'
 import type { ParityResult } from '../../harness/types.js'
 import { getConfig } from '../../config.js'
 

@@ -47,16 +47,10 @@ export async function testNoPassthrough(
 
       if (!isFilter) return { status: 'skipped', isFilterEffect: false, similarity: null, details: 'Not a filter effect' }
 
-      // Render and read output
-      renderer.render(0)
       const canvas = renderer.canvas
       const width = canvas.width, height = canvas.height
-      const pixels = new Uint8Array(width * height * 4)
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-      gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
 
       // Render two frames at different times and compare
-      // If the output changes between t=0 and t=1, the effect is modifying input
       renderer.render(0)
       const pixels0 = new Uint8Array(width * height * 4)
       gl.bindFramebuffer(gl.FRAMEBUFFER, null)
@@ -78,7 +72,7 @@ export async function testNoPassthrough(
         diffSum += Math.abs(pixels0[idx] - pixels1[idx]) +
           Math.abs(pixels0[idx + 1] - pixels1[idx + 1]) +
           Math.abs(pixels0[idx + 2] - pixels1[idx + 2])
-        colors.add(`${pixels[idx]},${pixels[idx + 1]},${pixels[idx + 2]}`)
+        colors.add(`${pixels0[idx]},${pixels0[idx + 1]},${pixels0[idx + 2]}`)
         samples++
       }
 

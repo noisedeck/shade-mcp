@@ -38,10 +38,9 @@ export async function acquireServer(port: number, root: string): Promise<string>
 export function releaseServer(): void {
   if (refCount <= 0) return
   refCount--
-  if (refCount <= 0 && serverProcess) {
+  if (refCount === 0 && serverProcess) {
     serverProcess.kill()
     serverProcess = null
-    refCount = 0
   }
 }
 
