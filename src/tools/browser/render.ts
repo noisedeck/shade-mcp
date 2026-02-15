@@ -32,7 +32,7 @@ export async function renderEffectFrame(
     await page.waitForFunction(() => {
       const s = document.getElementById('status')
       const t = (s?.textContent || '').toLowerCase()
-      return t.includes('loaded') || t.includes('ready') || t.includes('error')
+      return t.includes('loaded') || t.includes('compiled') || t.includes('ready') || t.includes('error')
     }, { timeout: 30000 })
 
     // Apply uniforms

@@ -96,7 +96,11 @@ export async function acquireServer(
     }
 
     // Route: everything else → viewerRoot
-    const relPath = url === '/' ? 'index.html' : url.slice(1)
+    let relPath = url === '/' ? 'index.html' : url.slice(1)
+    // Resolve directory URLs to index.html
+    if (relPath.endsWith('/')) {
+      relPath += 'index.html'
+    }
     const filePath = safePath(viewerRoot, relPath)
     if (!filePath) {
       res.writeHead(403)
