@@ -3,13 +3,11 @@ name: Trigger Downstream Updates
 
 on:
   push:
-    branches:
-      - main
-      - master
-    paths:
-      - 'src/**'
-      - 'dist/**'
-  workflow_dispatch:  # Allow manual triggering
+    branches: [main]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+  workflow_dispatch:
 
 jobs:
   trigger-downstream:
@@ -28,5 +26,21 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
           repository: noisedeck/noisemaker
+          event-type: shade-mcp-updated
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+
+      - name: Trigger portable
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: noisedeck/portable
+          event-type: shade-mcp-updated
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+
+      - name: Trigger shade
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: noisedeck/shade
           event-type: shade-mcp-updated
           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
