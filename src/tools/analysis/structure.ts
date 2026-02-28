@@ -5,6 +5,39 @@ import { join, basename } from 'node:path'
 import { loadEffectDefinition } from '../../formats/index.js'
 import { getConfig } from '../../config.js'
 import { resolveEffectDir } from '../resolve-effects.js'
+import { extractFunctionNames, extractUniforms } from './compare.js'
+
+// GLSL reserved words and built-in functions that cannot be used as uniform names
+const GLSL_RESERVED = new Set([
+  // Type qualifiers
+  'const', 'uniform', 'in', 'out', 'inout', 'centroid', 'flat', 'smooth',
+  'layout', 'invariant', 'highp', 'mediump', 'lowp', 'precision',
+  // Types
+  'void', 'bool', 'int', 'uint', 'float',
+  'vec2', 'vec3', 'vec4', 'bvec2', 'bvec3', 'bvec4',
+  'ivec2', 'ivec3', 'ivec4', 'uvec2', 'uvec3', 'uvec4',
+  'mat2', 'mat3', 'mat4', 'sampler2D', 'sampler3D', 'samplerCube',
+  // Control flow
+  'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'default',
+  'break', 'continue', 'return', 'discard', 'struct', 'true', 'false',
+])
+
+const GLSL_BUILTINS = new Set([
+  // Trig
+  'sin', 'cos', 'tan', 'asin', 'acos', 'atan',
+  // Exponential
+  'pow', 'exp', 'log', 'exp2', 'log2', 'sqrt', 'inversesqrt',
+  // Common
+  'abs', 'sign', 'floor', 'ceil', 'fract', 'mod', 'min', 'max', 'clamp',
+  'mix', 'step', 'smoothstep',
+  // Geometric
+  'length', 'distance', 'dot', 'cross', 'normalize', 'faceforward',
+  'reflect', 'refract',
+  // Texture
+  'texture', 'texelFetch', 'textureSize',
+  // Derivative
+  'dFdx', 'dFdy', 'fwidth',
+])
 
 export const checkEffectStructureSchema = {
   effect_id: z.string().describe('Effect ID (e.g., "synth/noise")'),
@@ -25,6 +58,7 @@ export async function checkEffectStructure(effectId: string): Promise<any> {
   const issues: any = {
     unusedFiles: [] as string[],
     namingIssues: [] as any[],
+    nameCollisions: [] as any[],
     leakedInternalUniforms: [] as string[],
     missingDescription: false,
     structuralParityIssues: [] as any[],
@@ -107,7 +141,43 @@ export async function checkEffectStructure(effectId: string): Promise<any> {
     }
   }
 
+  // Check for GLSL name collisions: uniforms vs functions, reserved words, built-ins
+  for (const gf of glslFiles) {
+    const source = readFileSync(join(glslDir, gf), 'utf-8')
+    const uniforms = extractUniforms(source, 'glsl')
+    const functions = extractFunctionNames(source, 'glsl')
+    const functionSet = new Set(functions)
+
+    for (const u of uniforms) {
+      if (functionSet.has(u)) {
+        issues.nameCollisions.push({
+          type: 'uniform_function',
+          name: u,
+          file: `glsl/${gf}`,
+          message: `Uniform "${u}" collides with function "${u}()" in same file`
+        })
+      }
+      if (GLSL_RESERVED.has(u)) {
+        issues.nameCollisions.push({
+          type: 'reserved_word',
+          name: u,
+          file: `glsl/${gf}`,
+          message: `Uniform "${u}" is a GLSL reserved word`
+        })
+      }
+      if (GLSL_BUILTINS.has(u)) {
+        issues.nameCollisions.push({
+          type: 'builtin_shadow',
+          name: u,
+          file: `glsl/${gf}`,
+          message: `Uniform "${u}" shadows GLSL built-in function "${u}()"`
+        })
+      }
+    }
+  }
+
   const hasIssues = issues.unusedFiles.length > 0 || issues.namingIssues.length > 0 ||
+    issues.nameCollisions.length > 0 ||
     issues.leakedInternalUniforms.length > 0 || issues.missingDescription ||
     issues.structuralParityIssues.length > 0
 
@@ -117,7 +187,7 @@ export async function checkEffectStructure(effectId: string): Promise<any> {
 export function registerCheckEffectStructure(server: McpServer): void {
   server.tool(
     'checkEffectStructure',
-    'Detect unused files, broken references, naming violations, leaked/undefined uniforms, missing descriptions, structural parity issues.',
+    'Detect unused files, broken references, naming violations, leaked/undefined uniforms, missing descriptions, structural parity issues, and GLSL name collisions (uniform vs function, reserved words, built-in shadowing).',
     checkEffectStructureSchema,
     async (args: any) => {
       const result = await checkEffectStructure(args.effect_id)

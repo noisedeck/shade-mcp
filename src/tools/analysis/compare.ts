@@ -9,30 +9,40 @@ export const compareShadersSchema = {
   effect_id: z.string().describe('Effect ID (e.g., "synth/noise")'),
 }
 
-function extractFunctionNames(source: string, lang: 'glsl' | 'wgsl'): string[] {
+export function extractFunctionNames(source: string, lang: 'glsl' | 'wgsl'): string[] {
+  const stripped = stripComments(source)
   const names: string[] = []
   if (lang === 'glsl') {
     const regex = /(?:void|float|vec[234]|mat[234]|int|bool)\s+(\w+)\s*\(/g
     let match
-    while ((match = regex.exec(source)) !== null) {
+    while ((match = regex.exec(stripped)) !== null) {
       names.push(match[1])
     }
   } else {
     const regex = /fn\s+(\w+)\s*\(/g
     let match
-    while ((match = regex.exec(source)) !== null) {
+    while ((match = regex.exec(stripped)) !== null) {
       names.push(match[1])
     }
   }
   return names
 }
 
-function extractUniforms(source: string, lang: 'glsl' | 'wgsl'): string[] {
+export function stripComments(source: string): string {
+  // Remove single-line comments
+  source = source.replace(/\/\/.*$/gm, '')
+  // Remove multi-line comments
+  source = source.replace(/\/\*[\s\S]*?\*\//g, '')
+  return source
+}
+
+export function extractUniforms(source: string, lang: 'glsl' | 'wgsl'): string[] {
+  const stripped = stripComments(source)
   const uniforms: string[] = []
   if (lang === 'glsl') {
-    const regex = /uniform\s+\w+\s+(\w+)/g
+    const regex = /uniform[ \t]+\w+[ \t]+(\w+)/g
     let match
-    while ((match = regex.exec(source)) !== null) {
+    while ((match = regex.exec(stripped)) !== null) {
       uniforms.push(match[1])
     }
   } else {
