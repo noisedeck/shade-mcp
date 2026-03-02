@@ -35,6 +35,7 @@
     }
   },
   "scripts": {
+    "prepare": "npm run build",
     "build": "tsup",
     "postbuild": "node -e \"import{readFileSync as r,writeFileSync as w}from'fs';const f='dist/index.js';w(f,'#!/usr/bin/env node\\n'+r(f,'utf8'))\"",
     "dev": "tsup --watch",
