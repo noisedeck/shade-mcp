@@ -8,6 +8,7 @@
  */
 
 import { DSL_CRITICAL_RULES, DSL_SCAFFOLDING_PATTERNS, DSL_REFERENCE } from './dsl-knowledge.js'
+import { DSL_EXEMPLAR_PATTERNS } from './dsl-exemplars.js'
 import { EFFECT_CATALOG } from './effect-catalog.js'
 import {
   EFFECT_DEFINITION_REFERENCE,
@@ -306,6 +307,50 @@ ${REQUIRED_PATTERNS}
 - Modify ONLY what's broken
 - Don't restructure working code
 - Test after each fix with validate_effect
+`
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DSL JAM STATE-SPECIFIC KNOWLEDGE BUNDLES
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const DSL_RESEARCH_KNOWLEDGE = `
+## DSL RESEARCH PHASE
+You are finding effects and example programs to compose a DSL program.
+
+${EFFECT_CATALOG}
+
+${DSL_REFERENCE}
+`
+
+export const DSL_PLAN_KNOWLEDGE = `
+## DSL PLAN PHASE
+You design the chain architecture for a DSL program.
+
+${DSL_REFERENCE}
+
+${DSL_SCAFFOLDING_PATTERNS}
+
+${DSL_EXEMPLAR_PATTERNS}
+`
+
+export const DSL_GENERATE_KNOWLEDGE = `
+## DSL GENERATE PHASE
+You emit a DSL program string from the plan.
+
+${DSL_CRITICAL_RULES}
+
+${DSL_SCAFFOLDING_PATTERNS}
+
+${DSL_EXEMPLAR_PATTERNS}
+`
+
+export const DSL_FIX_KNOWLEDGE = `
+## DSL FIX PHASE
+You fix issues with a DSL program.
+
+${DSL_CRITICAL_RULES}
+
+${DSL_SCAFFOLDING_PATTERNS}
 `
 
 // ═══════════════════════════════════════════════════════════════════════════

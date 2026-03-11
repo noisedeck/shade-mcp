@@ -38,6 +38,10 @@ export {
 export { GLSL_REFERENCE, GLSL_RECIPES } from './glsl-reference.js'
 export { AGENT_WORKFLOW_KNOWLEDGE, COMPACT_SHADER_KNOWLEDGE } from './workflow-knowledge.js'
 
+// DSL exemplars
+export { DSL_EXEMPLAR_PATTERNS, DSL_EXEMPLAR_PROGRAMS, searchExemplars } from './dsl-exemplars.js'
+export type { ExemplarProgram } from './dsl-exemplars.js'
+
 // FSM state bundles
 export {
   RESEARCH_KNOWLEDGE,
@@ -46,4 +50,8 @@ export {
   VALIDATE_KNOWLEDGE,
   FIX_KNOWLEDGE,
   FULL_SHADER_KNOWLEDGE,
+  DSL_RESEARCH_KNOWLEDGE,
+  DSL_PLAN_KNOWLEDGE,
+  DSL_GENERATE_KNOWLEDGE,
+  DSL_FIX_KNOWLEDGE,
 } from './state-bundles.js'
