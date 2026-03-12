@@ -3,37 +3,47 @@ export const EFFECT_CATALOG = `## Effect Catalog
 **IMPORTANT: Do NOT guess parameter names.** Copy parameter names exactly from the example programs below or from the exemplar programs. If you don't see an example of an effect being used with parameters, use it with NO parameters and let the defaults work.
 
 ### SYNTH (Generators) - Start chains, create images from nothing
-noise, fractal, cell, perlin, curl, polygon, shape, solid, osc2d, rd, ca, mnca, testPattern
+noise, fractal, julia, mandelbrot, newton, cell, perlin, curl, gabor, gradient,
+media, mnca, modPattern, osc2d, pattern, polygon, rd, roll, ca, scope, shape,
+solid, spectrum, subdivide, testPattern
 
 ### SYNTH3D (3D Volume Generators) - Use with render3d()
-noise3d, fractal3d, cell3d, shape3d, rd3d, ca3d
+noise3d, fractal3d, cell3d, flythrough3d, shape3d, rd3d, ca3d
 
 ### FILTER (Processors) - Chain after generators
-blur, warp, bloom, posterize, edge, emboss, sharpen, vignette, sobel, pixels,
-rot, scale, translate, flipMirror, bc, hs, inv, tint, thresh, chroma, channel,
-colorspace, palette, polar, waves, pinch, bulge, spiral, tunnel, lens, feedback,
-motionBlur, zoomBlur, chromaticAberration, prismaticAberration, grade, step,
-smoothstep, deriv, outline, cf, scroll
+adjust, bc, bloom, blur, bulge, celShading, cf, channel, chroma, chromaticAberration,
+clouds, colorspace, corrupt, crt, degauss, deriv, dither, edge, emboss, feedback,
+fibers, flipMirror, fxaa, glowingEdge, glyphMap, grade, grain, grime, historicPalette,
+hs, inv, lens, lensWarp, lightLeak, lighting, lowPoly, motionBlur, normalMap,
+normalize, octaveWarp, osd, outline, palette, pinch, pixelSort, pixels, polar,
+posterize, prismaticAberration, reindex, repeat, reverb, ridge, rot, scale,
+scanlineError, scratches, scroll, seamless, sharpen, simpleAberration, sine, skew,
+smooth, smoothstep, snow, sobel, spatter, spiral, spookyTicker, step, strayHair,
+tetraColorArray, tetraCosine, text, texture, thresh, tile, tint, translate, tunnel,
+vaseline, vignette, warp, waves, wobble, wormhole, zoomBlur
+
+### FILTER3D (3D Volume Processors)
+flow3d
 
 ### POINTS (Particle Systems) - Use with pointsEmit()/pointsRender()
 flow, physical, flock, attractor, life, hydraulic, dla, physarum, lenia
 
 ### RENDER (Pipeline Utilities)
-render3d, pointsEmit, pointsRender, pointsBillboardRender, loopBegin, loopEnd
+render3d, renderLit3d, pointsEmit, pointsRender, pointsBillboardRender,
+loopBegin, loopEnd, meshLoader, meshRender
 
 ### MIXER (Two-input blending) - Require tex: read(oN) parameter
-blendMode, alphaMask, applyMode, centerMask, displaceMixer, coalesce
+blendMode, alphaMask, applyMode, cellSplit, centerMask, distortion, focusBlur,
+patternMix, shadow, shapeMask, split, thresholdMix, uvRemap
 
 ### CLASSIC EFFECTS (classicNoisedeck namespace)
-background, bitEffects, cellNoise, fractal, noise, noise3d, pattern, shapes,
-bloom, blur, crt, vhs, grain, kaleido, vortex, ripple, wormhole, aberration, wobble,
-posterize, sobel, convolve, voronoi, clouds, nebula, fibers, glitch, scanlineError,
-degauss, lightLeak, shadow, frame, simpleFrame, tint, rotate, palette, colorMap,
-normalMap, densityMap, glyphMap, sketch, grime, scratches, snow, spatter, strayHair,
-lensDistortion, lensWarp, refract, valueRefract, reindex, ridge, sine, pixelSort,
-adjustHue, adjustSaturation, adjustBrightness, adjustContrast, normalize, fxaa,
-reverb, vaseline, glowingEdges, derivative, jpegDecimate, spookyTicker, texture,
-lowpoly, falseColor, onScreenDisplay, colorLab, effects, text
+background, bitEffects, caustic, cellNoise, cellRefract, coalesce, colorLab,
+composite, depthOfField, displaceMixer, effects, fractal, glitch, kaleido,
+lensDistortion, moodscape, noise, noise3d, palette, pattern, quadTap, refract,
+shapeMixer, shapes, shapes3d, splat, tunnel, warp
+
+### CLASSIC EFFECTS (classicNoisemaker namespace)
+kaleido, refract
 
 ### Parameter Examples (REAL, VERIFIED from working programs)
 \`\`\`
