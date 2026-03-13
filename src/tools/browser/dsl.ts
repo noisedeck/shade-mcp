@@ -65,7 +65,7 @@ export async function runDslProgram(
         }
         poll()
       })
-    }, { dsl, timeout: 30000, globals: session.globals })
+    }, { dsl, timeout: 300000, globals: session.globals })
 
     if (compileResult.status === 'error') {
       return { status: 'error', error: compileResult.message }

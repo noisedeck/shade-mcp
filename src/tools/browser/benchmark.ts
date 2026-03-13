@@ -41,7 +41,7 @@ export async function benchmarkEffectFPS(
       const s = document.getElementById('status')
       const t = (s?.textContent || '').toLowerCase()
       return t.includes('loaded') || t.includes('compiled') || t.includes('ready') || t.includes('error')
-    }, { timeout: 30000 })
+    }, { timeout: 300000 })
 
     // Run benchmark with per-frame timing
     const result = await page.evaluate(({ duration }) => {

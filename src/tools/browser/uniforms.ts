@@ -27,7 +27,7 @@ export async function testUniformResponsiveness(
       const s = document.getElementById('status')
       const t = (s?.textContent || '').toLowerCase()
       return t.includes('loaded') || t.includes('compiled') || t.includes('ready')
-    }, { timeout: 30000 })
+    }, { timeout: 300000 })
 
     // Pause animation for deterministic testing
     await page.evaluate((globals) => {

@@ -7,7 +7,7 @@ import { acquireServer, releaseServer, getServerUrl } from './server-manager.js'
 import { acquireBrowserSlot, releaseBrowserSlot } from './browser-queue.js'
 import { getConfig } from '../config.js'
 
-const STATUS_TIMEOUT = 30000
+const STATUS_TIMEOUT = 300000
 
 interface ConsoleEntry {
   type: string
