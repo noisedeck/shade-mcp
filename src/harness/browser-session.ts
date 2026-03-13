@@ -4,6 +4,7 @@ import type { Backend } from '../config.js'
 import type { BrowserSessionOptions, CompileResult, RenderResult, BenchmarkResult, ImageMetrics, ViewerGlobals } from './types.js'
 import { DEFAULT_GLOBALS, globalsFromPrefix } from './types.js'
 import { acquireServer, releaseServer, getServerUrl } from './server-manager.js'
+import { acquireBrowserSlot, releaseBrowserSlot } from './browser-queue.js'
 import { getConfig } from '../config.js'
 
 const STATUS_TIMEOUT = 30000
@@ -59,51 +60,64 @@ export class BrowserSession {
   async setup(): Promise<void> {
     if (this._isSetup) throw new Error('Session already set up. Call teardown() first.')
 
-    this.baseUrl = await acquireServer(this.options.viewerPort, this.options.viewerRoot, this.options.effectsDir)
+    await acquireBrowserSlot()
+    try {
+      this.baseUrl = await acquireServer(this.options.viewerPort, this.options.viewerRoot, this.options.effectsDir)
 
-    this.browser = await chromium.launch(
-      getBrowserLaunchOptions(this.options.headless, this.options.backend)
-    )
+      this.browser = await chromium.launch(
+        getBrowserLaunchOptions(this.options.headless, this.options.backend)
+      )
 
-    const viewportSize = process.env.CI
-      ? { width: 256, height: 256 }
-      : { width: 1280, height: 720 }
+      const viewportSize = process.env.CI
+        ? { width: 256, height: 256 }
+        : { width: 1280, height: 720 }
 
-    this.context = await this.browser.newContext({
-      viewport: viewportSize,
-      ignoreHTTPSErrors: true
-    })
+      this.context = await this.browser.newContext({
+        viewport: viewportSize,
+        ignoreHTTPSErrors: true
+      })
 
-    this.page = await this.context.newPage()
-    this.page.setDefaultTimeout(STATUS_TIMEOUT)
-    this.page.setDefaultNavigationTimeout(STATUS_TIMEOUT)
+      this.page = await this.context.newPage()
+      this.page.setDefaultTimeout(STATUS_TIMEOUT)
+      this.page.setDefaultNavigationTimeout(STATUS_TIMEOUT)
 
-    this.consoleMessages = []
-    this.page.on('console', (msg: ConsoleMessage) => {
-      const text = msg.text()
-      if (text.includes('Error') || text.includes('error') || text.includes('warning') ||
-          text.includes('[compileEffect]') || text.includes('[expand]') ||
-          text.includes('[Pipeline') || text.includes('[MCP-UNIFORM]') ||
-          msg.type() === 'error' || msg.type() === 'warning') {
-        this.consoleMessages.push({ type: msg.type(), text })
-      }
-    })
+      this.consoleMessages = []
+      this.page.on('console', (msg: ConsoleMessage) => {
+        const text = msg.text()
+        if (text.includes('Error') || text.includes('error') || text.includes('warning') ||
+            text.includes('[compileEffect]') || text.includes('[expand]') ||
+            text.includes('[Pipeline') || text.includes('[MCP-UNIFORM]') ||
+            msg.type() === 'error' || msg.type() === 'warning') {
+          this.consoleMessages.push({ type: msg.type(), text })
+        }
+      })
 
-    this.page.on('pageerror', (error: Error) => {
-      this.consoleMessages.push({ type: 'pageerror', text: error.message })
-    })
+      this.page.on('pageerror', (error: Error) => {
+        this.consoleMessages.push({ type: 'pageerror', text: error.message })
+      })
 
-    await this.page.goto(`${this.baseUrl}${this.viewerPath}`, { waitUntil: 'networkidle' })
+      await this.page.goto(`${this.baseUrl}${this.viewerPath}`, { waitUntil: 'networkidle' })
 
-    // Wait for renderer to be ready
-    const rendererGlobal = this.globals.canvasRenderer
-    await this.page.waitForFunction(
-      (name) => !!(window as any)[name],
-      rendererGlobal,
-      { timeout: STATUS_TIMEOUT }
-    )
+      // Wait for renderer to be ready
+      const rendererGlobal = this.globals.canvasRenderer
+      await this.page.waitForFunction(
+        (name) => !!(window as any)[name],
+        rendererGlobal,
+        { timeout: STATUS_TIMEOUT }
+      )
 
-    this._isSetup = true
+      this._isSetup = true
+    } catch (err) {
+      // Clean up partially initialized resources, release the slot
+      if (this.page) await this.page.close().catch(() => {})
+      if (this.context) await this.context.close().catch(() => {})
+      if (this.browser) await this.browser.close().catch(() => {})
+      this.page = null
+      this.context = null
+      this.browser = null
+      releaseBrowserSlot()
+      throw err
+    }
   }
 
   async teardown(): Promise<void> {
@@ -120,6 +134,7 @@ export class BrowserSession {
       this.browser = null
     }
     releaseServer()
+    releaseBrowserSlot()
     this.consoleMessages = []
     this._isSetup = false
   }

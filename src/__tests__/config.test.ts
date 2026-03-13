@@ -9,7 +9,7 @@ describe('config', () => {
   it('uses default values when no env vars set', async () => {
     const { getConfig } = await import('../config.js')
     const config = getConfig()
-    expect(config.viewerPort).toBe(4173)
+    expect(config.viewerPort).toBe(0)
     expect(config.defaultBackend).toBe('webgl2')
   })
 

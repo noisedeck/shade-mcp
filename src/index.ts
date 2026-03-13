@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import { getConfig } from './config.js'
+import { setMaxBrowsers } from './harness/browser-queue.js'
 
 // Browser tools
 import { registerCompileEffect } from './tools/browser/compile.js'
@@ -26,6 +28,10 @@ import { registerSearchShaderKnowledge } from './tools/knowledge/search-knowledg
 // Utility tools
 import { registerListEffects } from './tools/utility/list-effects.js'
 import { registerGenerateManifest } from './tools/utility/generate-manifest.js'
+
+// Configure browser concurrency from env
+const config = getConfig()
+setMaxBrowsers(config.maxBrowsers)
 
 const server = new McpServer({
   name: 'shade-mcp',

@@ -11,6 +11,7 @@ export interface Config {
   projectRoot: string
   globalsPrefix: string | undefined
   viewerPath: string | undefined
+  maxBrowsers: number
 }
 
 function parseBackend(value: string | undefined): Backend {
@@ -24,10 +25,11 @@ export function getConfig(): Config {
   const projectRoot = process.env.SHADE_PROJECT_ROOT || process.cwd()
   return {
     effectsDir: process.env.SHADE_EFFECTS_DIR || resolve(projectRoot, 'effects'),
-    viewerPort: parseInt(process.env.SHADE_VIEWER_PORT || '4173', 10),
+    viewerPort: parseInt(process.env.SHADE_VIEWER_PORT || '0', 10),
     defaultBackend: parseBackend(process.env.SHADE_BACKEND),
     projectRoot,
     globalsPrefix: process.env.SHADE_GLOBALS_PREFIX || undefined,
     viewerPath: process.env.SHADE_VIEWER_PATH || undefined,
+    maxBrowsers: parseInt(process.env.SHADE_MAX_BROWSERS || '1', 10),
   }
 }

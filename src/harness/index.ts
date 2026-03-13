@@ -1,6 +1,7 @@
 // Harness core
 export { BrowserSession } from './browser-session.js'
 export { acquireServer, releaseServer, getServerUrl, getRefCount } from './server-manager.js'
+export { setMaxBrowsers, getMaxBrowsers, getActiveBrowsers, getQueueDepth, resetBrowserQueue } from './browser-queue.js'
 export { computeImageMetrics } from './pixel-reader.js'
 
 // Types

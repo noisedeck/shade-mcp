@@ -72,9 +72,10 @@ shade-mcp is configured entirely via env vars. Each consumer project points its 
 | `SHADE_PROJECT_ROOT` | No | cwd | Project root (for .anthropic/.openai key files) |
 | `SHADE_VIEWER_ROOT` | No | `$PROJECT_ROOT/viewer` | HTTP server root directory |
 | `SHADE_VIEWER_PATH` | No | `/` | Path to viewer index.html within viewer root |
-| `SHADE_VIEWER_PORT` | No | `4173` | HTTP server port |
+| `SHADE_VIEWER_PORT` | No | `0` (auto) | HTTP server port (0 = OS-assigned to avoid conflicts) |
 | `SHADE_GLOBALS_PREFIX` | No | `__shade` | Window globals prefix (e.g., `__portable` → `__portableCanvasRenderer`) |
 | `SHADE_BACKEND` | No | `webgl2` | Default rendering backend |
+| `SHADE_MAX_BROWSERS` | No | `1` | Max concurrent browser sessions (pipelining) |
 
 ## Consumer Projects
 

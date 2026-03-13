@@ -4,7 +4,8 @@ import { extname, join, resolve as pathResolve, normalize, basename } from 'node
 
 let httpServer: Server | null = null
 let refCount = 0
-let activePort = 4173
+let activePort = 0
+let requestedPort = 0
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
@@ -55,13 +56,13 @@ export async function acquireServer(
   effectsDir: string,
 ): Promise<string> {
   if (refCount > 0) {
-    if (port !== activePort) {
-      throw new Error(`Server already running on port ${activePort}, cannot switch to ${port}`)
+    if (port !== requestedPort) {
+      throw new Error(`Server already running on port ${activePort} (requested ${requestedPort}), cannot switch to ${port}`)
     }
     refCount++
     return getServerUrl()
   }
-  activePort = port
+  requestedPort = port
 
   // Detect flat layout (effectsDir itself contains definition.json/js)
   const isFlatLayout = existsSync(join(effectsDir, 'definition.json')) || existsSync(join(effectsDir, 'definition.js'))
@@ -111,7 +112,11 @@ export async function acquireServer(
   })
 
   await new Promise<void>((resolve, reject) => {
-    httpServer!.listen(port, '127.0.0.1', () => resolve())
+    httpServer!.listen(port, '127.0.0.1', () => {
+      const addr = httpServer!.address()
+      activePort = typeof addr === 'object' && addr ? addr.port : port
+      resolve()
+    })
     httpServer!.on('error', reject)
   })
 
@@ -125,6 +130,8 @@ export function releaseServer(): void {
   if (refCount === 0 && httpServer) {
     httpServer.close()
     httpServer = null
+    activePort = 0
+    requestedPort = 0
   }
 }
 
