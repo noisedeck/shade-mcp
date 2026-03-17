@@ -19,6 +19,8 @@ export async function runDslProgram(
   return session.runWithConsoleCapture(async () => {
     const page = session.page!
 
+    await session.setBackend(session.backend)
+
     // Compile DSL
     const compileResult = await page.evaluate(({ dsl, timeout, globals }) => {
       return new Promise<any>((resolve) => {

@@ -20,6 +20,8 @@ export async function compileEffect(
   return session.runWithConsoleCapture(async () => {
     const page = session.page!
 
+    await session.setBackend(session.backend)
+
     // Select effect
     await page.evaluate((id) => {
       const select = document.getElementById('effect-select') as HTMLSelectElement

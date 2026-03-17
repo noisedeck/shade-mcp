@@ -24,6 +24,8 @@ export async function renderEffectFrame(
   return session.runWithConsoleCapture(async () => {
     const page = session.page!
 
+    await session.setBackend(session.backend)
+
     // Set viewport resolution if specified
     if (options.resolution) {
       await page.setViewportSize({ width: options.resolution[0], height: options.resolution[1] })
