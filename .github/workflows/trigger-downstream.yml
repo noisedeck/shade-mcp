@@ -49,13 +49,13 @@ jobs:
         with:
           app-id: ${{ secrets.NOISEDECK_APP_ID }}
           private-key: ${{ secrets.NOISEDECK_APP_PRIVATE_KEY }}
-          owner: noisedeck
+          owner: noisefactorllc
 
       - name: Trigger noisemaker
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ steps.app-token.outputs.token }}
-          repository: noisedeck/noisemaker
+          repository: noisefactorllc/noisemaker
           event-type: shade-mcp-updated
           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "tag": "${{ steps.tag.outputs.tag }}"}'
 
@@ -63,7 +63,7 @@ jobs:
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ steps.app-token.outputs.token }}
-          repository: noisedeck/portable
+          repository: noisefactorllc/portable
           event-type: shade-mcp-updated
           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "tag": "${{ steps.tag.outputs.tag }}"}'
 
@@ -71,6 +71,6 @@ jobs:
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ steps.app-token.outputs.token }}
-          repository: noisedeck/shade
+          repository: noisefactorllc/shade
           event-type: shade-mcp-updated
           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "tag": "${{ steps.tag.outputs.tag }}"}'
