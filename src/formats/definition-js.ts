@@ -8,7 +8,7 @@ export function parseDefinitionJs(filePath: string, effectDir: string): EffectDe
   const name = extractString(source, /name\s*[:=]\s*['"]([^'"]+)['"]/)
   const namespace = extractString(source, /namespace\s*[:=]\s*['"](\w+)['"]/)
   const description = extractString(source, /description\s*[:=]\s*['"]([^'"]+)['"]/)
-  const starter = /starter\s*[:=]\s*true/.test(source) ? true : undefined
+  const starter = /starter\s*[:=]\s*true/.test(source) ? true : /starter\s*[:=]\s*false/.test(source) ? false : undefined
 
   // Extract tags
   const tagsMatch = source.match(/tags\s*[:=]\s*\[([^\]]+)\]/)

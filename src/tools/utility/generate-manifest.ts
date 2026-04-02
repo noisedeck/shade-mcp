@@ -48,6 +48,11 @@ function extractTags(content: string): string[] | null {
 }
 
 function isStarterEffect(content: string): boolean {
+  // Check for explicit starter property first
+  if (/\bstarter\s*[:=]\s*true\b/.test(content)) return true
+  if (/\bstarter\s*[:=]\s*false\b/.test(content)) return false
+
+  // Fall through to autodetection
   const passesMatch = content.match(/passes\s*[=:]\s*\[/)
   if (!passesMatch) return true
 
