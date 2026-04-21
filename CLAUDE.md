@@ -90,6 +90,11 @@ shade-mcp is configured entirely via env vars. Each consumer project points its 
 - Vendors full `dist/` via `pull-shade-mcp` script (clones from GitHub, builds, copies)
 - Uses shade-mcp as MCP server and as library (harness imports)
 - Gets name collision detection automatically on next `pull-shade-mcp` run
+- Consumer contract: apps ingesting portable effect JSON MUST wrap the
+  effect data in a real `Effect` instance (via `new Effect({...})`) before
+  registering it with the runtime. Plain object literals miss
+  `Effect.prototype.asyncInit` and crash the pipeline's lifecycle guard.
+  See `portable/docs/FORMAT.md` → Registration → Consumer Contract.
 
 ### shade (`../shade`)
 - Vendors only `dist/knowledge/` via `pull-shade-mcp` (knowledge module for augmenting prompts)
