@@ -50,7 +50,8 @@ export class BrowserSession {
     this.viewerPath = opts.viewerPath ?? config.viewerPath ?? '/'
     this.options = {
       backend: opts.backend,
-      headless: opts.headless === true,
+      // headless is opt-in via { headless: true } or SHADE_HEADLESS=1. Default headed.
+      headless: opts.headless ?? (process.env.SHADE_HEADLESS === '1' || process.env.SHADE_HEADLESS === 'true'),
       viewerPort: opts.viewerPort ?? config.viewerPort,
       viewerRoot: opts.viewerRoot ?? process.env.SHADE_VIEWER_ROOT ?? resolve(config.projectRoot, 'viewer'),
       effectsDir: opts.effectsDir ?? config.effectsDir
@@ -148,17 +149,29 @@ export class BrowserSession {
         ? w[globals.currentBackend]()
         : 'glsl'
 
-      if (current !== targetBackend) {
-        const radio = document.querySelector(`input[name="backend"][value="${targetBackend}"]`) as HTMLInputElement | null
-        if (radio) {
-          radio.click()
-          const start = Date.now()
-          while (Date.now() - start < timeout) {
-            const nowBackend = typeof w[globals.currentBackend] === 'function' ? w[globals.currentBackend]() : 'glsl'
-            if (nowBackend === targetBackend) break
-            await new Promise(r => setTimeout(r, 50))
-          }
+      if (current === targetBackend) return
+
+      // Try renderer.switchBackend first (noisemaker demo + Shade app expose this).
+      const renderer = w[globals.canvasRenderer]
+      if (renderer && typeof renderer.switchBackend === 'function') {
+        await renderer.switchBackend(targetBackend)
+      } else {
+        // Fall back to UI controls. Try button[data-backend] (noisemaker demo)
+        // then input[name="backend"] radio (legacy/Shade viewer).
+        const btn = document.querySelector(`button[data-backend="${targetBackend}"]`) as HTMLButtonElement | null
+        if (btn) {
+          btn.click()
+        } else {
+          const radio = document.querySelector(`input[name="backend"][value="${targetBackend}"]`) as HTMLInputElement | null
+          if (radio) radio.click()
         }
+      }
+
+      const start = Date.now()
+      while (Date.now() - start < timeout) {
+        const nowBackend = typeof w[globals.currentBackend] === 'function' ? w[globals.currentBackend]() : 'glsl'
+        if (nowBackend === targetBackend) break
+        await new Promise(r => setTimeout(r, 50))
       }
     }, { targetBackend, timeout: STATUS_TIMEOUT, globals: this.globals })
   }
