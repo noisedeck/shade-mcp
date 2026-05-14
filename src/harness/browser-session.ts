@@ -50,7 +50,7 @@ export class BrowserSession {
     this.viewerPath = opts.viewerPath ?? config.viewerPath ?? '/'
     this.options = {
       backend: opts.backend,
-      headless: opts.headless !== false,
+      headless: opts.headless === true,
       viewerPort: opts.viewerPort ?? config.viewerPort,
       viewerRoot: opts.viewerRoot ?? process.env.SHADE_VIEWER_ROOT ?? resolve(config.projectRoot, 'viewer'),
       effectsDir: opts.effectsDir ?? config.effectsDir

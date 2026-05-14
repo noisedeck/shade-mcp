@@ -101,8 +101,23 @@ export async function testPixelParity(
   // Switch to WebGPU and capture
   await session.setBackend('webgpu')
 
+  // Re-select the effect after backend switch so uniforms re-initialize from
+  // effect defaults under the new backend; otherwise WebGL2-side state leaks
+  // and we compare drifted uniforms.
+  await session.page!.evaluate((id) => {
+    const select = document.getElementById('effect-select') as HTMLSelectElement
+    if (select) { select.value = id; select.dispatchEvent(new Event('change')) }
+  }, effectId)
+
+  await session.page!.waitForFunction(() => {
+    const s = document.getElementById('status')
+    const t = (s?.textContent || '').toLowerCase()
+    return t.includes('loaded') || t.includes('compiled') || t.includes('ready')
+  }, { timeout: 300000 })
+
   await session.page!.evaluate(({ globals, seed }) => {
     const w = window as any
+    if (w[globals.setPaused]) w[globals.setPaused](true)
     if (w[globals.setPausedTime]) w[globals.setPausedTime](0)
     const pipeline = w[globals.renderingPipeline]
     if (pipeline) {
