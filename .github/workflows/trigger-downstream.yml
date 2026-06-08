@@ -52,7 +52,7 @@ jobs:
           owner: noisefactorllc
 
       - name: Trigger noisemaker
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3
         with:
           token: ${{ steps.app-token.outputs.token }}
           repository: noisefactorllc/noisemaker
@@ -60,7 +60,7 @@ jobs:
           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "tag": "${{ steps.tag.outputs.tag }}"}'
 
       - name: Trigger portable
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3
         with:
           token: ${{ steps.app-token.outputs.token }}
           repository: noisefactorllc/portable
@@ -68,7 +68,7 @@ jobs:
           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "tag": "${{ steps.tag.outputs.tag }}"}'
 
       - name: Trigger shade
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3
         with:
           token: ${{ steps.app-token.outputs.token }}
           repository: noisefactorllc/shade
