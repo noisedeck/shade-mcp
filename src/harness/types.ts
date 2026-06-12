@@ -94,4 +94,15 @@ export interface ParityResult {
   resolution: [number, number]
   details: string
   console_errors?: string[]
+  // Solid-color + Y-flip diagnostics (populated by testPixelParity)
+  glslSolid?: boolean
+  wgslSolid?: boolean
+  glslVariance?: number[]
+  wgslVariance?: number[]
+  yFlipDetected?: boolean
+  yFlipCleanFlip?: boolean
+  yFlipMismatchPercent?: number
+  yFlipMeanDiff?: number
+  yFlipRatio?: number
+  issues?: string[]
 }
