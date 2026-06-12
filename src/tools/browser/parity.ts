@@ -13,8 +13,11 @@ export const testPixelParitySchema = {
 }
 
 // Capture pixels from the canvas, handling both WebGL and WebGPU backends.
-// WebGL: gl.readPixels (bottom-up, flipped to top-down)
-// WebGPU: canvas 2D getImageData fallback (already top-down)
+// WebGL: gl.readPixels (bottom-up) flipped to top-down.
+// WebGPU: canvas 2D getImageData (already top-down).
+// Both end up top-down (screen orientation), so a shader-level vertical
+// inversion shows up as one image being the vertical mirror of the other —
+// which the Y-flip detector below tests for explicitly.
 const CAPTURE_PIXELS_FN = `
 function capturePixels(globals) {
   var w = window;
@@ -22,17 +25,24 @@ function capturePixels(globals) {
   var pipeline = w[globals.renderingPipeline];
   if (!renderer) return null;
 
+  // Render twice: the first render's present()/blit to the default
+  // framebuffer can race a synchronous readback (preserveDrawingBuffer:false
+  // clears it; the FBO->canvas blit may not have committed). A second render
+  // guarantees the default framebuffer holds a complete, current frame before
+  // we read it. Without this the WebGL2 capture is non-deterministic — the
+  // same shader yields rich pixels one run and a near-blank buffer the next,
+  // which made every parity number and Y-flip ratio unreliable.
+  renderer.render(0);
   renderer.render(0);
   var canvas = renderer.canvas;
   var width = canvas.width, height = canvas.height;
 
-  // Try WebGL readPixels
   var gl = pipeline && pipeline.backend && pipeline.backend.gl;
   if (gl) {
+    gl.finish(); // ensure all GPU work (incl. present blit) has completed
     var pixels = new Uint8Array(width * height * 4);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-    // Flip Y to top-down for consistent comparison
     var flipped = new Uint8Array(width * height * 4);
     var rowBytes = width * 4;
     for (var y = 0; y < height; y++) {
@@ -41,7 +51,6 @@ function capturePixels(globals) {
     return { data: Array.from(flipped), width: width, height: height };
   }
 
-  // Fallback: canvas 2D context (works for WebGPU)
   var tmpCanvas = document.createElement('canvas');
   tmpCanvas.width = width;
   tmpCanvas.height = height;
@@ -159,17 +168,96 @@ export async function testPixelParity(
 
   const meanDiff = totalDiff / totalChannels
   const mismatchPercent = (mismatchCount / totalChannels) * 100
+  const w = glslPixels.width, h = glslPixels.height
+
+  // Solid color detection: check variance for each backend
+  function checkSolid(pixels: { data: number[], width: number, height: number }, label: string) {
+    const n = pixels.width * pixels.height
+    let rS = 0, gS = 0, bS = 0
+    for (let i = 0; i < pixels.data.length; i += 4) { rS += pixels.data[i]; gS += pixels.data[i+1]; bS += pixels.data[i+2] }
+    const rM = rS/n, gM = gS/n, bM = bS/n
+    let rV = 0, gV = 0, bV = 0
+    for (let i = 0; i < pixels.data.length; i += 4) {
+      rV += (pixels.data[i]-rM)**2; gV += (pixels.data[i+1]-gM)**2; bV += (pixels.data[i+2]-bM)**2
+    }
+    rV /= n; gV /= n; bV /= n
+    const isSolid = rV < 5 && gV < 5 && bV < 5
+    return { label, isSolid, variance: [Math.round(rV), Math.round(gV), Math.round(bV)], mean: [Math.round(rM), Math.round(gM), Math.round(bM)] }
+  }
+
+  const glslSolid = checkSolid(glslPixels, 'glsl')
+  const wgslSolid = checkSolid(wgslPixels, 'wgsl')
+
+  // Y-flip detection.
+  //
+  // Compare GLSL against a VERTICALLY FLIPPED WGSL using BOTH a continuous
+  // metric (mean absolute difference) and the thresholded channel count.
+  // The count metric alone (diff > epsilon) is too noisy for noise fields and
+  // its old `< mismatchPercent * 0.5` cutoff missed real inversions that also
+  // carried minor coord/aspect differences. The MAD ratio is the reliable
+  // signal: if flipping WGSL makes the average per-channel difference
+  // substantially smaller than the un-flipped comparison, the render is
+  // vertically inverted (fully or partially) between the two backends.
+  let yFlipMismatch = 0
+  let yFlipTotalDiff = 0
+  const rowBytes = w * 4
+  for (let y = 0; y < h; y++) {
+    const glslRow = y
+    const wgslFlippedRow = h - 1 - y
+    for (let x = 0; x < rowBytes; x++) {
+      const diff = Math.abs(glslPixels.data[glslRow * rowBytes + x] - wgslPixels.data[wgslFlippedRow * rowBytes + x])
+      yFlipTotalDiff += diff
+      if (diff > epsilon) yFlipMismatch++
+    }
+  }
+  const yFlipPercent = (yFlipMismatch / totalChannels) * 100
+  const yFlipMeanDiff = yFlipTotalDiff / totalChannels
+
+  // meanDiff = average abs diff of the NORMAL (un-flipped) comparison.
+  // Ratio < 1 means flipping improves the match. A real Y-flip drives the
+  // flipped MAD far below the normal MAD; uncorrelated noise gives ratio ~1.
+  const yFlipRatio = meanDiff > 0 ? yFlipMeanDiff / meanDiff : 1
+  const isYFlipped =
+    meanDiff > 2 &&                       // there is a real difference to explain
+    yFlipMeanDiff < meanDiff &&           // flipping must actually help
+    yFlipRatio < 0.7                      // and help substantially (>=30% lower MAD)
+  const isCleanYFlip = meanDiff > 2 && yFlipRatio < 0.25
+
+  const issues: string[] = []
+  if (glslSolid.isSolid) issues.push(`GLSL SOLID COLOR (mean=${glslSolid.mean})`)
+  if (wgslSolid.isSolid) issues.push(`WGSL SOLID COLOR (mean=${wgslSolid.mean})`)
+  if (isYFlipped) {
+    issues.push(
+      `${isCleanYFlip ? 'Y-FLIP' : 'PARTIAL Y-FLIP'} DETECTED ` +
+      `(flipped meanDiff=${yFlipMeanDiff.toFixed(2)} vs normal meanDiff=${meanDiff.toFixed(2)}, ` +
+      `ratio=${yFlipRatio.toFixed(2)}, flip mismatch=${yFlipPercent.toFixed(1)}% vs normal=${mismatchPercent.toFixed(1)}%)`
+    )
+  }
+
+  const status = mismatchPercent < 1 ? 'ok' : 'mismatch'
 
   return {
-    status: mismatchPercent < 1 ? 'ok' : 'mismatch',
+    status,
     maxDiff,
     meanDiff: Math.round(meanDiff * 100) / 100,
     mismatchCount,
     mismatchPercent: Math.round(mismatchPercent * 100) / 100,
-    resolution: [glslPixels.width, glslPixels.height],
-    details: mismatchPercent < 1
-      ? `Pixel parity OK (maxDiff=${maxDiff}, meanDiff=${meanDiff.toFixed(2)})`
-      : `Pixel mismatch: ${mismatchPercent.toFixed(1)}% channels differ by >${epsilon}`
+    resolution: [w, h],
+    glslSolid: glslSolid.isSolid,
+    wgslSolid: wgslSolid.isSolid,
+    glslVariance: glslSolid.variance,
+    wgslVariance: wgslSolid.variance,
+    yFlipDetected: isYFlipped,
+    yFlipCleanFlip: isCleanYFlip,
+    yFlipMismatchPercent: Math.round(yFlipPercent * 100) / 100,
+    yFlipMeanDiff: Math.round(yFlipMeanDiff * 100) / 100,
+    yFlipRatio: Math.round(yFlipRatio * 1000) / 1000,
+    issues,
+    details: issues.length > 0
+      ? issues.join('; ')
+      : mismatchPercent < 1
+        ? `Pixel parity OK (maxDiff=${maxDiff}, meanDiff=${meanDiff.toFixed(2)})`
+        : `Pixel mismatch: ${mismatchPercent.toFixed(1)}% channels differ by >${epsilon}`
   }
 }
 
