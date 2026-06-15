@@ -12,55 +12,105 @@ export const testPixelParitySchema = {
   seed: z.number().optional().default(42).describe('Random seed for reproducible noise'),
 }
 
-// Capture pixels from the canvas, handling both WebGL and WebGPU backends.
-// WebGL: gl.readPixels (bottom-up) flipped to top-down.
-// WebGPU: canvas 2D getImageData (already top-down).
-// Both end up top-down (screen orientation), so a shader-level vertical
-// inversion shows up as one image being the vertical mirror of the other —
-// which the Y-flip detector below tests for explicitly.
-const CAPTURE_PIXELS_FN = `
-function capturePixels(globals) {
-  var w = window;
-  var renderer = w[globals.canvasRenderer];
-  var pipeline = w[globals.renderingPipeline];
-  if (!renderer) return null;
-
-  // Render twice: the first render's present()/blit to the default
-  // framebuffer can race a synchronous readback (preserveDrawingBuffer:false
-  // clears it; the FBO->canvas blit may not have committed). A second render
-  // guarantees the default framebuffer holds a complete, current frame before
-  // we read it. Without this the WebGL2 capture is non-deterministic — the
-  // same shader yields rich pixels one run and a near-blank buffer the next,
-  // which made every parity number and Y-flip ratio unreliable.
-  renderer.render(0);
-  renderer.render(0);
-  var canvas = renderer.canvas;
-  var width = canvas.width, height = canvas.height;
-
-  var gl = pipeline && pipeline.backend && pipeline.backend.gl;
-  if (gl) {
-    gl.finish(); // ensure all GPU work (incl. present blit) has completed
-    var pixels = new Uint8Array(width * height * 4);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-    var flipped = new Uint8Array(width * height * 4);
-    var rowBytes = width * 4;
-    for (var y = 0; y < height; y++) {
-      flipped.set(pixels.subarray((height - 1 - y) * rowBytes, (height - y) * rowBytes), y * rowBytes);
-    }
-    return { data: Array.from(flipped), width: width, height: height };
-  }
-
-  var tmpCanvas = document.createElement('canvas');
-  tmpCanvas.width = width;
-  tmpCanvas.height = height;
-  var ctx = tmpCanvas.getContext('2d');
-  if (!ctx) return null;
-  ctx.drawImage(canvas, 0, 0);
-  var imageData = ctx.getImageData(0, 0, width, height);
-  return { data: Array.from(imageData.data), width: width, height: height };
+// Wait until the freshly selected effect has finished compiling. The status
+// text ("compiled <name>") is NOT a reliable signal: it still shows the
+// PREVIOUS effect after a new selection, so matching it returns instantly and
+// the capture races an in-flight recompile (rebuildPipeline awaits
+// loadEffectsOnDemand before compile). pipeline.isCompiling is the real signal —
+// set true before recompile, cleared by compilePrograms when programs are ready.
+async function waitReady(session: BrowserSession): Promise<void> {
+  await session.page!.waitForFunction((globals: any) => {
+    const w = window as any
+    const p = w[globals.renderingPipeline]
+    if (!p || p.isCompiling) return false
+    return !!(p.graph && p.graph.passes && p.graph.passes.length > 0)
+  }, session.globals, { timeout: 300000, polling: 50 })
 }
-`
+
+// Let the live render loop draw real frames so the backend/effect is fully warm
+// before the paused capture. A freshly compiled effect needs a few real frames
+// before a paused render(0) yields a complete frame — cold reads come back
+// blank or partial (the source of the old non-deterministic 73%/100% numbers).
+async function warmUp(session: BrowserSession, frames = 6): Promise<void> {
+  const start = await session.page!.evaluate((globals: any) => {
+    const w = window as any
+    if (w[globals.setPaused]) w[globals.setPaused](false) // ensure the loop runs
+    return (w[globals.frameCount] as number) || 0
+  }, session.globals)
+  await session.page!.waitForFunction(
+    ({ globals, target }: any) => (((window as any)[globals.frameCount] as number) || 0) >= target,
+    { globals: session.globals, target: start + frames },
+    { timeout: 30000, polling: 30 }
+  )
+}
+
+// Capture the rendered frame by reading the OFFSCREEN render surface that
+// pipeline.render() presents (`global_<renderSurface>_read`, falling back to the
+// last node output). Reading the offscreen texture — not the canvas / default
+// framebuffer — is the key reliability fix: when paused/headless the WebGL2
+// present blit to the canvas does not commit, so canvas readback (gl.readPixels
+// OR drawImage) returns a blank/partial buffer, while the offscreen surface
+// holds the true render. Both ping-pong buffers carry the rendered content, so
+// the _read buffer is read deterministically. WebGPU readback is bottom-up, so
+// its rows are flipped to top-down to match WebGL2 (which flips internally) —
+// both end up in screen orientation, the same normalization the old canvas
+// capture used, keeping the comparison + Y-flip detector below valid.
+async function captureSurface(
+  session: BrowserSession,
+  seed: number,
+): Promise<{ data: number[]; width: number; height: number } | null> {
+  return await session.page!.evaluate(async ({ globals, seed }) => {
+    const w = window as any
+    if (w[globals.setPaused]) w[globals.setPaused](true)
+    if (w[globals.setPausedTime]) w[globals.setPausedTime](0)
+    const p = w[globals.renderingPipeline]
+    if (!p) return null
+    if (p.globalUniforms) p.globalUniforms.seed = seed
+    for (const pass of (p.graph?.passes || [])) if (pass.uniforms) pass.uniforms.seed = seed
+    const r = w[globals.canvasRenderer]
+    const b = p.backend
+    if (!r || !b || !b.readPixels || !b.textures) return null
+    const surf = p.graph?.renderSurface
+    if (!surf) return null
+
+    const readSurface = async () => {
+      const candidates = ['global_' + surf + '_read']
+      try {
+        const nodes: string[] = []
+        for (const k of b.textures.keys()) if (/node_\d+_out/.test(k)) nodes.push(k)
+        nodes.sort((a: string, c: string) => parseInt(a.match(/node_(\d+)/)![1], 10) - parseInt(c.match(/node_(\d+)/)![1], 10))
+        if (nodes.length) candidates.push(nodes[nodes.length - 1])
+      } catch (e) { /* textures map not iterable */ }
+      for (const id of candidates) {
+        try {
+          const px = await b.readPixels(id)
+          if (px && px.width && px.height && px.data) return px
+        } catch (e) { /* try next candidate */ }
+      }
+      return null
+    }
+
+    let px: any = null
+    for (let attempt = 0; attempt < 6 && !px; attempt++) {
+      r.render(0); r.render(0)
+      px = await readSurface()
+      if (!px) await new Promise(res => setTimeout(res, 80))
+    }
+    if (!px) return null
+
+    let data: Uint8Array = px.data
+    if (!b.gl) {
+      // WebGPU readback is bottom-up; flip to top-down to match WebGL2.
+      const flipped = new Uint8Array(px.width * px.height * 4)
+      const rowBytes = px.width * 4
+      for (let y = 0; y < px.height; y++) {
+        flipped.set(data.subarray((px.height - 1 - y) * rowBytes, (px.height - y) * rowBytes), y * rowBytes)
+      }
+      data = flipped
+    }
+    return { data: Array.from(data), width: px.width, height: px.height }
+  }, { globals: session.globals, seed })
+}
 
 export async function testPixelParity(
   session: BrowserSession,
@@ -72,76 +122,23 @@ export async function testPixelParity(
 
   // Capture with WebGL2
   await session.setBackend('webgl2')
-  await session.page!.evaluate((id) => {
-    const select = document.getElementById('effect-select') as HTMLSelectElement
-    if (select) { select.value = id; select.dispatchEvent(new Event('change')) }
-  }, effectId)
-
-  await session.page!.waitForFunction(() => {
-    const s = document.getElementById('status')
-    const t = (s?.textContent || '').toLowerCase()
-    return t.includes('loaded') || t.includes('compiled') || t.includes('ready')
-  }, { timeout: 300000 })
-
-  // Pause, set seed, and render at time=0
-  await session.page!.evaluate(({ globals, seed }) => {
-    const w = window as any
-    if (w[globals.setPaused]) w[globals.setPaused](true)
-    if (w[globals.setPausedTime]) w[globals.setPausedTime](0)
-    const pipeline = w[globals.renderingPipeline]
-    if (pipeline) {
-      if (pipeline.globalUniforms) pipeline.globalUniforms.seed = seed
-      const passes = pipeline.graph?.passes || []
-      for (const pass of passes) {
-        if (pass.uniforms) pass.uniforms.seed = seed
-      }
-    }
-  }, { globals: session.globals, seed })
-
-  const glslPixels = await session.page!.evaluate(
-    new Function('globals', CAPTURE_PIXELS_FN + 'return capturePixels(globals);') as (g: any) => any,
-    session.globals
-  )
+  await session.selectEffect(effectId)
+  await waitReady(session)
+  await warmUp(session)
+  const glslPixels = await captureSurface(session, seed)
 
   if (!glslPixels) {
     return { status: 'error', maxDiff: 0, meanDiff: 0, mismatchCount: 0, mismatchPercent: 0, resolution: [0, 0], details: 'Failed to capture WebGL2' }
   }
 
-  // Switch to WebGPU and capture
+  // Switch to WebGPU and capture. Re-select the effect after the backend switch
+  // so uniforms re-initialize from effect defaults under the new backend;
+  // otherwise WebGL2-side state leaks and we compare drifted uniforms.
   await session.setBackend('webgpu')
-
-  // Re-select the effect after backend switch so uniforms re-initialize from
-  // effect defaults under the new backend; otherwise WebGL2-side state leaks
-  // and we compare drifted uniforms.
-  await session.page!.evaluate((id) => {
-    const select = document.getElementById('effect-select') as HTMLSelectElement
-    if (select) { select.value = id; select.dispatchEvent(new Event('change')) }
-  }, effectId)
-
-  await session.page!.waitForFunction(() => {
-    const s = document.getElementById('status')
-    const t = (s?.textContent || '').toLowerCase()
-    return t.includes('loaded') || t.includes('compiled') || t.includes('ready')
-  }, { timeout: 300000 })
-
-  await session.page!.evaluate(({ globals, seed }) => {
-    const w = window as any
-    if (w[globals.setPaused]) w[globals.setPaused](true)
-    if (w[globals.setPausedTime]) w[globals.setPausedTime](0)
-    const pipeline = w[globals.renderingPipeline]
-    if (pipeline) {
-      if (pipeline.globalUniforms) pipeline.globalUniforms.seed = seed
-      const passes = pipeline.graph?.passes || []
-      for (const pass of passes) {
-        if (pass.uniforms) pass.uniforms.seed = seed
-      }
-    }
-  }, { globals: session.globals, seed })
-
-  const wgslPixels = await session.page!.evaluate(
-    new Function('globals', CAPTURE_PIXELS_FN + 'return capturePixels(globals);') as (g: any) => any,
-    session.globals
-  )
+  await session.selectEffect(effectId)
+  await waitReady(session)
+  await warmUp(session)
+  const wgslPixels = await captureSurface(session, seed)
 
   // Resume
   await session.page!.evaluate((globals) => {
@@ -151,6 +148,16 @@ export async function testPixelParity(
 
   if (!wgslPixels) {
     return { status: 'error', maxDiff: 0, meanDiff: 0, mismatchCount: 0, mismatchPercent: 0, resolution: [glslPixels.width, glslPixels.height], details: 'Failed to capture WebGPU' }
+  }
+
+  // Guard against comparing mismatched capture dimensions (would corrupt the
+  // per-channel diff and Y-flip loops by indexing past the smaller buffer).
+  if (glslPixels.width !== wgslPixels.width || glslPixels.height !== wgslPixels.height) {
+    return {
+      status: 'error', maxDiff: 0, meanDiff: 0, mismatchCount: 0, mismatchPercent: 0,
+      resolution: [glslPixels.width, glslPixels.height],
+      details: `Capture size mismatch: glsl ${glslPixels.width}x${glslPixels.height} vs wgsl ${wgslPixels.width}x${wgslPixels.height}`,
+    }
   }
 
   // Compare pixels
