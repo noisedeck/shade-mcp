@@ -13,7 +13,12 @@ export function extractFunctionNames(source: string, lang: 'glsl' | 'wgsl'): str
   const stripped = stripComments(source)
   const names: string[] = []
   if (lang === 'glsl') {
-    const regex = /(?:void|float|vec[234]|mat[234]|int|bool)\s+(\w+)\s*\(/g
+    // Match `returnType name(` definitions. The type set covers GLSL ES 3.x
+    // scalars/vectors/matrices/samplers; the leading \b prevents matching a
+    // type substring inside a larger identifier (e.g. `int` inside `uint` or
+    // `point`). Requiring `name(` immediately after the type keeps function
+    // *calls* and variable declarations from being captured.
+    const regex = /\b(?:void|bool|u?int|float|[biu]?vec[234]|mat[234](?:x[234])?|[iu]?sampler\w*)\s+(\w+)\s*\(/g
     let match
     while ((match = regex.exec(stripped)) !== null) {
       names.push(match[1])
@@ -48,7 +53,7 @@ export function extractUniforms(source: string, lang: 'glsl' | 'wgsl'): string[]
   } else {
     const regex = /@group\(\d+\)\s+@binding\(\d+\)\s+var<uniform>\s+(\w+)/g
     let match
-    while ((match = regex.exec(source)) !== null) {
+    while ((match = regex.exec(stripped)) !== null) {
       uniforms.push(match[1])
     }
   }
