@@ -48,9 +48,9 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.111.0",
+    "@anthropic-ai/sdk": "^0.112.3",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "openai": "^6.46.0",
+    "openai": "^6.48.0",
     "playwright": "^1.61.1"
   },
   "devDependencies": {
