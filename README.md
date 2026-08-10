@@ -7,16 +7,33 @@ Distilled from three projects:
 - **[portable](https://github.com/noisedeck/portable)** — portable effect authoring
 - **[shade](https://shade.noisedeck.app)** — agent-assisted shader editing
 
+## Requirements
+
+- Node.js 18 or newer
+- A viewer page, for the browser tools only — shade-mcp does not bundle one. See [Viewer](#viewer).
+
 ## Quick Start
 
 ```bash
-npm install
-npm run setup          # install Playwright Chromium
-bash scripts/setup.sh  # vendor noisemaker runtime (requires ../noisemaker)
-npm run build
+npm install            # installs dependencies and builds dist/
+npm run setup          # install Playwright Chromium (browser tools only)
 ```
 
 **Using shade-mcp with noisemaker or portable?** See [docs/SETUP.md](docs/SETUP.md) for step-by-step configuration.
+
+## Viewer
+
+The eight browser tools drive a real Chromium against a viewer page that hosts
+the renderer. shade-mcp does not ship one: point `SHADE_VIEWER_ROOT` at a
+directory containing an `index.html` that exposes the renderer as window
+globals, and set `SHADE_GLOBALS_PREFIX` to match them.
+
+| Project | `SHADE_VIEWER_ROOT` | `SHADE_GLOBALS_PREFIX` |
+|---------|---------------------|------------------------|
+| noisemaker | `<noisemaker>/demo/shaders` | `__noisemaker` |
+| portable | `<portable>/viewer` | `__portable` |
+
+The analysis, knowledge, and utility tools read from disk and need no viewer.
 
 ## Configuration
 
@@ -24,10 +41,15 @@ Environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SHADE_EFFECTS_DIR` | `../noisemaker/effects` | Path to effects library |
-| `SHADE_VIEWER_PORT` | `4173` | Local dev server port |
+| `SHADE_EFFECTS_DIR` | `<project root>/effects` | Path to the effects library |
+| `SHADE_PROJECT_ROOT` | cwd | Project root, used for relative paths and AI key lookup |
+| `SHADE_VIEWER_ROOT` | `<project root>/viewer` | Directory served as the viewer |
+| `SHADE_VIEWER_PATH` | `/` | Path within the viewer to open |
+| `SHADE_VIEWER_PORT` | `0` (OS-assigned) | Port for the local viewer server |
+| `SHADE_GLOBALS_PREFIX` | `__shade` | Prefix of the viewer's window globals |
 | `SHADE_BACKEND` | `webgl2` | Default rendering backend (`webgl2` or `webgpu`) |
-| `SHADE_PROJECT_ROOT` | cwd | Project root for relative paths |
+| `SHADE_MAX_BROWSERS` | `1` | Concurrent browser sessions |
+| `SHADE_HEADLESS` | unset (headed) | Set to `1` to run Chromium headless |
 | `ANTHROPIC_API_KEY` | — | Required for AI-powered tools (vision, analysis) |
 | `OPENAI_API_KEY` | — | Fallback AI provider |
 
@@ -107,11 +129,11 @@ In `~/.codeium/windsurf/mcp_config.json`:
 
 ### Browser Tools (8)
 
-Require Playwright Chromium and vendored noisemaker runtime.
+Require Playwright Chromium and a viewer (see [Viewer](#viewer)).
 
 | Tool | Description |
 |------|-------------|
-| `compileEffect` | Compile shader effect, return pass-level diagnostics. Supports CSV batch. |
+| `compileEffect` | Compile shader effect, return pass-level diagnostics. Supports glob/CSV batch. |
 | `renderEffectFrame` | Render single frame, compute image metrics (mean RGB, variance, blank/monochrome detection), optional PNG capture. |
 | `describeEffectFrame` | Render frame + AI vision analysis. Requires `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`. |
 | `benchmarkEffectFPS` | Measure FPS, jitter, and frame timing stats against a target framerate. |
@@ -152,10 +174,13 @@ In-memory search indexes.
 ## Development
 
 ```bash
-npm test          # run tests
-npm run build     # build with tsup
-npm run dev       # watch mode
+npm test           # run tests
+npm run typecheck  # tsc --noEmit, including tests
+npm run build      # build with tsup
+npm run dev        # watch mode
 ```
+
+Tests and typecheck are separate gates: vitest does not typecheck, so run both.
 
 ## License
 

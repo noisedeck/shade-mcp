@@ -2,16 +2,17 @@
 
 shade-mcp replaces the built-in MCP servers in **noisemaker** and **portable**. This guide walks through setup for each project in VS Code and Claude Code.
 
+Paths below are written as `/path/to/<project>`. Substitute your own checkout
+locations; MCP clients do not expand `~`, so use absolute paths.
+
 ## Prerequisites
 
-Build shade-mcp once (from the shade-mcp directory):
+Node.js 18 or newer. Build shade-mcp once, from the shade-mcp directory:
 
 ```bash
-cd ~/source/shade-mcp
-npm install
-npm run setup              # install Playwright Chromium
-bash scripts/setup.sh      # vendor noisemaker runtime (requires ../noisemaker)
-npm run build
+cd /path/to/shade-mcp
+npm install                # installs dependencies and builds dist/
+npm run setup              # install Playwright Chromium (browser tools only)
 ```
 
 Verify it built:
@@ -20,9 +21,17 @@ Verify it built:
 ls dist/index.js  # should exist
 ```
 
+## The viewer
+
+The eight browser tools need a viewer page that hosts the renderer. shade-mcp
+does not bundle one, so each project points `SHADE_VIEWER_ROOT` at its own and
+sets `SHADE_GLOBALS_PREFIX` to match the window globals that viewer exposes.
+Both are included in the configs below. The analysis, knowledge, and utility
+tools read from disk and work without a viewer.
+
 ## noisemaker
 
-Effects live at `noisemaker/shaders/effects/` in nested `namespace/effect/` layout.
+Effects live at `noisemaker/shaders/effects/` in nested `namespace/effect/` layout, and the demo viewer at `noisemaker/demo/shaders/`.
 
 ### VS Code (Copilot)
 
@@ -34,10 +43,12 @@ Create or edit `noisemaker/.vscode/mcp.json`:
     "shade": {
       "type": "stdio",
       "command": "node",
-      "args": ["/Users/aayars/source/shade-mcp/dist/index.js"],
+      "args": ["/path/to/shade-mcp/dist/index.js"],
       "env": {
-        "SHADE_EFFECTS_DIR": "/Users/aayars/source/noisemaker/shaders/effects",
-        "SHADE_PROJECT_ROOT": "/Users/aayars/source/noisemaker"
+        "SHADE_EFFECTS_DIR": "/path/to/noisemaker/shaders/effects",
+        "SHADE_PROJECT_ROOT": "/path/to/noisemaker",
+        "SHADE_VIEWER_ROOT": "/path/to/noisemaker/demo/shaders",
+        "SHADE_GLOBALS_PREFIX": "__noisemaker"
       }
     }
   }
@@ -55,10 +66,12 @@ Add to `~/.claude/settings.json` (or project-level `.claude/settings.local.json`
   "mcpServers": {
     "shade": {
       "command": "node",
-      "args": ["/Users/aayars/source/shade-mcp/dist/index.js"],
+      "args": ["/path/to/shade-mcp/dist/index.js"],
       "env": {
-        "SHADE_EFFECTS_DIR": "/Users/aayars/source/noisemaker/shaders/effects",
-        "SHADE_PROJECT_ROOT": "/Users/aayars/source/noisemaker"
+        "SHADE_EFFECTS_DIR": "/path/to/noisemaker/shaders/effects",
+        "SHADE_PROJECT_ROOT": "/path/to/noisemaker",
+        "SHADE_VIEWER_ROOT": "/path/to/noisemaker/demo/shaders",
+        "SHADE_GLOBALS_PREFIX": "__noisemaker"
       }
     }
   }
@@ -78,7 +91,7 @@ generateManifest()
 
 ## portable
 
-The effect lives at `portable/effect/` in a flat layout (no namespace nesting). shade-mcp auto-detects this.
+The effect lives at `portable/effect/` in a flat layout (no namespace nesting). shade-mcp auto-detects this. The viewer lives at `portable/viewer/`.
 
 ### VS Code (Copilot)
 
@@ -90,10 +103,12 @@ Create or edit `portable/.vscode/mcp.json`:
     "shade": {
       "type": "stdio",
       "command": "node",
-      "args": ["/Users/aayars/source/shade-mcp/dist/index.js"],
+      "args": ["/path/to/shade-mcp/dist/index.js"],
       "env": {
-        "SHADE_EFFECTS_DIR": "/Users/aayars/source/portable/effect",
-        "SHADE_PROJECT_ROOT": "/Users/aayars/source/portable"
+        "SHADE_EFFECTS_DIR": "/path/to/portable/effect",
+        "SHADE_PROJECT_ROOT": "/path/to/portable",
+        "SHADE_VIEWER_ROOT": "/path/to/portable/viewer",
+        "SHADE_GLOBALS_PREFIX": "__portable"
       }
     }
   }
@@ -111,10 +126,12 @@ Add to `~/.claude/settings.json` (or project-level `.claude/settings.local.json`
   "mcpServers": {
     "shade": {
       "command": "node",
-      "args": ["/Users/aayars/source/shade-mcp/dist/index.js"],
+      "args": ["/path/to/shade-mcp/dist/index.js"],
       "env": {
-        "SHADE_EFFECTS_DIR": "/Users/aayars/source/portable/effect",
-        "SHADE_PROJECT_ROOT": "/Users/aayars/source/portable"
+        "SHADE_EFFECTS_DIR": "/path/to/portable/effect",
+        "SHADE_PROJECT_ROOT": "/path/to/portable",
+        "SHADE_VIEWER_ROOT": "/path/to/portable/viewer",
+        "SHADE_GLOBALS_PREFIX": "__portable"
       }
     }
   }
@@ -151,7 +168,11 @@ If both old and new MCPs are active, you'll get duplicate tool names and unpredi
 
 **"Multiple effects found. Please specify effect_id"** — You're pointing at a multi-effect library (like noisemaker) but didn't pass `effect_id`. Pass it explicitly: `compileEffect({ effect_id: "synth/noise" })`.
 
-**Browser tools hang or timeout** — Make sure you ran `npm run setup` (installs Chromium) and `bash scripts/setup.sh` (vendors the noisemaker runtime). Without the runtime, the viewer page can't render anything.
+**"Invalid effect id"** — Effect IDs are resolved inside `SHADE_EFFECTS_DIR`; absolute paths and `..` segments are refused. Pass a plain `namespace/effect` ID.
+
+**Browser tools hang or time out** — Check three things: `npm run setup` has installed Chromium; `SHADE_VIEWER_ROOT` points at a directory containing the viewer's `index.html`; and `SHADE_GLOBALS_PREFIX` matches the globals that viewer exposes. A prefix mismatch means the renderer global never appears and setup waits for it.
+
+**A browser window opens on every call** — That is the default. Set `SHADE_HEADLESS=1` to run Chromium headless, which is also required on machines with no display.
 
 **AI tools return "No API key"** — Set `ANTHROPIC_API_KEY` (preferred) or `OPENAI_API_KEY` in the env block of your MCP config, or create a `.anthropic` / `.openai` file in the project root containing just the key.
 
@@ -159,9 +180,18 @@ If both old and new MCPs are active, you'll get duplicate tool names and unpredi
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `SHADE_EFFECTS_DIR` | Yes | `./effects` | Path to effects directory |
-| `SHADE_PROJECT_ROOT` | No | cwd | Project root for AI key lookup |
-| `SHADE_VIEWER_PORT` | No | `4173` | HTTP server port |
+| `SHADE_EFFECTS_DIR` | Yes | `<project root>/effects` | Path to effects directory |
+| `SHADE_PROJECT_ROOT` | No | cwd | Project root for relative paths and AI key lookup |
+| `SHADE_VIEWER_ROOT` | Browser tools | `<project root>/viewer` | Directory served as the viewer |
+| `SHADE_GLOBALS_PREFIX` | Browser tools | `__shade` | Prefix of the viewer's window globals |
+| `SHADE_VIEWER_PATH` | No | `/` | Path within the viewer to open |
+| `SHADE_VIEWER_PORT` | No | `0` (OS-assigned) | HTTP server port |
 | `SHADE_BACKEND` | No | `webgl2` | Default backend (`webgl2` or `webgpu`) |
+| `SHADE_MAX_BROWSERS` | No | `1` | Concurrent browser sessions |
+| `SHADE_HEADLESS` | No | unset (headed) | Set to `1` to run Chromium headless |
 | `ANTHROPIC_API_KEY` | No | — | For AI-powered tools |
 | `OPENAI_API_KEY` | No | — | Fallback AI provider |
+
+The viewer server binds to `127.0.0.1` and serves only `SHADE_VIEWER_ROOT` and
+`SHADE_EFFECTS_DIR`. Point `SHADE_VIEWER_ROOT` at the viewer directory itself
+rather than a whole workspace, so unrelated files are never in scope.
