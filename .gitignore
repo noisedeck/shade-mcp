@@ -1,6 +1,5 @@
 node_modules/
 dist/
-viewer/vendor/
 *.tsbuildinfo
 .env
 .anthropic

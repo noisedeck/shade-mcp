@@ -4,43 +4,67 @@
   "description": "MCP server for shader effect development",
   "type": "module",
   "license": "MIT",
+  "author": "Noise Factor LLC",
+  "homepage": "https://github.com/noisefactorllc/shade-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/noisefactorllc/shade-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/noisefactorllc/shade-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "shader",
+    "glsl",
+    "wgsl",
+    "webgl",
+    "webgpu",
+    "creative-coding",
+    "noisemaker"
+  ],
   "main": "dist/index.js",
   "bin": {
     "shade-mcp": "dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./harness": {
-      "import": "./dist/harness/index.js",
-      "types": "./dist/harness/index.d.ts"
+      "types": "./dist/harness/index.d.ts",
+      "import": "./dist/harness/index.js"
     },
     "./formats": {
-      "import": "./dist/formats/index.js",
-      "types": "./dist/formats/index.d.ts"
+      "types": "./dist/formats/index.d.ts",
+      "import": "./dist/formats/index.js"
     },
     "./ai": {
-      "import": "./dist/ai/provider.js",
-      "types": "./dist/ai/provider.d.ts"
+      "types": "./dist/ai/provider.d.ts",
+      "import": "./dist/ai/provider.js"
     },
     "./analysis": {
-      "import": "./dist/analysis/index.js",
-      "types": "./dist/analysis/index.d.ts"
+      "types": "./dist/analysis/index.d.ts",
+      "import": "./dist/analysis/index.js"
     },
     "./knowledge": {
-      "import": "./dist/knowledge/index.js",
-      "types": "./dist/knowledge/index.d.ts"
+      "types": "./dist/knowledge/index.d.ts",
+      "import": "./dist/knowledge/index.js"
     }
   },
   "scripts": {
     "prepare": "npm run build",
-    "build": "tsup && tsc --emitDeclarationOnly",
+    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly",
     "postbuild": "node -e \"import{readFileSync as r,writeFileSync as w}from'fs';const f='dist/index.js';w(f,'#!/usr/bin/env node\\n'+r(f,'utf8'))\"",
     "dev": "tsup --watch",
     "start": "node dist/index.js",
     "setup": "playwright install chromium",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },

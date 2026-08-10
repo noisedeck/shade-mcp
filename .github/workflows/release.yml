@@ -20,6 +20,16 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Check tag matches package version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg=$(node -p "require('./package.json').version")
+          if [ "$tag" != "$pkg" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $pkg" >&2
+            exit 1
+          fi
+          echo "Tag and package version agree: $pkg"
+
       - name: Install and build
         run: npm ci && npm run build
 
