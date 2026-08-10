@@ -7,8 +7,6 @@ let refCount = 0
 let activePort = 0
 let requestedPort = 0
 
-// Only these extensions are served. Anything else — including credential-shaped
-// files such as .pem or extensionless keys — is refused rather than guessed at.
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
   '.js': 'application/javascript',
@@ -73,12 +71,7 @@ function safePath(root: string, relPath: string): string | null {
 
 function serveFile(filePath: string, res: ServerResponse): void {
   const ext = extname(filePath).toLowerCase()
-  const mime = MIME_TYPES[ext]
-  if (!mime) {
-    res.writeHead(404)
-    res.end('Not Found')
-    return
-  }
+  const mime = MIME_TYPES[ext] || 'application/octet-stream'
   const stream = createReadStream(filePath)
   stream.on('error', (err) => {
     if (!res.headersSent) {

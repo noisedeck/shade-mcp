@@ -185,6 +185,18 @@ describe('server-manager', () => {
       rmSync(sibling, { recursive: true, force: true })
     })
 
+    it('serves viewer assets whose extension is not in the MIME table', async () => {
+      mkdirSync(tmpDir, { recursive: true })
+      writeFileSync(resolve(tmpDir, 'index.html'), '')
+      writeFileSync(resolve(tmpDir, 'bundle.chunk'), 'CHUNK-PAYLOAD')
+      mkdirSync(tmpEffects, { recursive: true })
+
+      const url = await acquireServer(testPort, tmpDir, tmpEffects)
+      const res = await fetch(`${url}/bundle.chunk`)
+      expect(res.ok).toBe(true)
+      expect(await res.text()).toContain('CHUNK-PAYLOAD')
+    })
+
     it('refuses to serve dotfiles from the viewer root', async () => {
       mkdirSync(tmpDir, { recursive: true })
       writeFileSync(resolve(tmpDir, 'index.html'), '')
