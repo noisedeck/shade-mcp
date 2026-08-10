@@ -28,6 +28,7 @@ import { registerSearchShaderKnowledge } from './tools/knowledge/search-knowledg
 // Utility tools
 import { registerListEffects } from './tools/utility/list-effects.js'
 import { registerGenerateManifest } from './tools/utility/generate-manifest.js'
+import { VERSION } from './version.js'
 
 // Configure browser concurrency from env
 const config = getConfig()
@@ -35,7 +36,7 @@ setMaxBrowsers(config.maxBrowsers)
 
 const server = new McpServer({
   name: 'shade-mcp',
-  version: '0.1.0',
+  version: VERSION,
 })
 
 // Register all 18 tools
