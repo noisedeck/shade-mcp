@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import { getConfig } from '../../config.js'
+import { toolResult } from '../tool-result.js'
 
 export const runDslProgramSchema = {
   dsl: z.string().describe('DSL program string'),
@@ -179,7 +180,7 @@ export function registerRunDslProgram(server: McpServer): void {
           captureImage: args.capture_image,
           uniforms: args.uniforms,
         })
-        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+        return toolResult(result)
       } finally {
         await session.teardown()
       }

@@ -6,6 +6,7 @@ import { loadEffectDefinition } from '../../formats/index.js'
 import { getConfig } from '../../config.js'
 import { resolveEffectDir } from '../resolve-effects.js'
 import { extractFunctionNames, extractUniforms } from './compare.js'
+import { toolResult } from '../tool-result.js'
 
 // GLSL reserved words and built-in functions that cannot be used as uniform names
 const GLSL_RESERVED = new Set([
@@ -181,7 +182,7 @@ export async function checkEffectStructure(effectId: string): Promise<any> {
     issues.leakedInternalUniforms.length > 0 || issues.missingDescription ||
     issues.structuralParityIssues.length > 0
 
-  return { status: hasIssues ? 'warning' : 'ok', ...issues }
+  return { ...issues, status: hasIssues ? 'warning' : 'ok' }
 }
 
 export function registerCheckEffectStructure(server: McpServer): void {
@@ -191,7 +192,7 @@ export function registerCheckEffectStructure(server: McpServer): void {
     checkEffectStructureSchema,
     async (args: any) => {
       const result = await checkEffectStructure(args.effect_id)
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+      return toolResult(result)
     }
   )
 }

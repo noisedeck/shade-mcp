@@ -43,6 +43,8 @@ export class BrowserSession {
   private baseUrl = ''
   private consoleMessages: ConsoleEntry[] = []
   private _isSetup = false
+  private _serverAcquired = false
+  private _slotAcquired = false
 
   constructor(opts: BrowserSessionOptions) {
     const config = getConfig()
@@ -62,8 +64,10 @@ export class BrowserSession {
     if (this._isSetup) throw new Error('Session already set up. Call teardown() first.')
 
     await acquireBrowserSlot()
+    this._slotAcquired = true
     try {
       this.baseUrl = await acquireServer(this.options.viewerPort, this.options.viewerRoot, this.options.effectsDir)
+      this._serverAcquired = true
 
       this.browser = await chromium.launch(
         getBrowserLaunchOptions(this.options.headless, this.options.backend)
@@ -109,15 +113,32 @@ export class BrowserSession {
 
       this._isSetup = true
     } catch (err) {
-      // Clean up partially initialized resources, release the slot
+      // Clean up partially initialized resources and hand back whatever this
+      // session actually took, including the server acquired above.
       if (this.page) await this.page.close().catch(() => {})
       if (this.context) await this.context.close().catch(() => {})
       if (this.browser) await this.browser.close().catch(() => {})
       this.page = null
       this.context = null
       this.browser = null
-      releaseBrowserSlot()
+      this.releaseShared()
       throw err
+    }
+  }
+
+  /**
+   * Hands back the server ref and browser slot exactly once. Tools call
+   * teardown() from a finally block that also runs after a failed setup, so
+   * releasing unconditionally would hand back another session's resources.
+   */
+  private releaseShared(): void {
+    if (this._serverAcquired) {
+      releaseServer()
+      this._serverAcquired = false
+    }
+    if (this._slotAcquired) {
+      releaseBrowserSlot()
+      this._slotAcquired = false
     }
   }
 
@@ -134,8 +155,7 @@ export class BrowserSession {
       await this.browser.close().catch(() => {})
       this.browser = null
     }
-    releaseServer()
-    releaseBrowserSlot()
+    this.releaseShared()
     this.consoleMessages = []
     this._isSetup = false
   }

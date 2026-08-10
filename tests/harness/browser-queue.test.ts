@@ -5,6 +5,7 @@ import {
   resetBrowserQueue,
   setMaxBrowsers,
   getActiveBrowsers,
+  getMaxBrowsers,
   getQueueDepth,
 } from '../../src/harness/browser-queue.js'
 
@@ -103,9 +104,33 @@ describe('browser-queue', () => {
 
   it('setMaxBrowsers floors at 1', () => {
     setMaxBrowsers(0)
-    expect(getActiveBrowsers()).toBe(0)
-    // Should still allow one slot (floor of 1)
+    expect(getMaxBrowsers()).toBe(1)
     setMaxBrowsers(-5)
-    // Internally maxConcurrency = Math.max(1, -5) = 1
+    expect(getMaxBrowsers()).toBe(1)
+  })
+
+  it('setMaxBrowsers falls back to 1 for a non-numeric limit', () => {
+    setMaxBrowsers(NaN)
+    expect(getMaxBrowsers()).toBe(1)
+  })
+
+  it('still admits sessions after a non-numeric limit is set', async () => {
+    setMaxBrowsers(NaN)
+    await acquireBrowserSlot()
+    expect(getActiveBrowsers()).toBe(1)
+    releaseBrowserSlot()
+  })
+
+  it('resetBrowserQueue resolves waiters instead of stranding them', async () => {
+    setMaxBrowsers(1)
+    await acquireBrowserSlot()
+    let admitted = false
+    const waiter = acquireBrowserSlot().then(() => { admitted = true })
+    await Promise.resolve()
+    expect(admitted).toBe(false)
+
+    resetBrowserQueue()
+    await waiter
+    expect(admitted).toBe(true)
   })
 })

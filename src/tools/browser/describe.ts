@@ -5,6 +5,7 @@ import { renderEffectFrame } from './render.js'
 import { getAIProvider, callAI, NO_AI_KEY_MESSAGE } from '../../ai/provider.js'
 import { getConfig } from '../../config.js'
 import { resolveEffectIds } from '../resolve-effects.js'
+import { toolResult } from '../tool-result.js'
 
 export const describeEffectFrameSchema = {
   effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
@@ -69,7 +70,7 @@ export function registerDescribeEffectFrame(server: McpServer): void {
             results.push({ effect_id: id, status: 'error', error: err instanceof Error ? err.message : String(err) })
           }
         }
-        return { content: [{ type: 'text', text: JSON.stringify(results.length === 1 ? results[0] : results, null, 2) }] }
+        return toolResult(results.length === 1 ? results[0] : results)
       } finally {
         await session.teardown()
       }

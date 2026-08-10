@@ -3,6 +3,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { readdirSync, readFileSync, writeFileSync, existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { getConfig } from '../../config.js'
+import { toolResult } from '../tool-result.js'
 
 export const generateManifestSchema = {}
 
@@ -137,7 +138,7 @@ export function registerGenerateManifest(server: McpServer): void {
       const effectsDir = config.effectsDir
 
       if (!existsSync(effectsDir)) {
-        return { content: [{ type: 'text', text: JSON.stringify({ error: `Effects directory not found: ${effectsDir}` }) }] }
+        return toolResult({ error: `Effects directory not found: ${effectsDir}` })
       }
 
       const manifest: Record<string, any> = {}

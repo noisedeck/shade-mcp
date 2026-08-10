@@ -3,6 +3,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { BrowserSession } from '../../harness/browser-session.js'
 import { getConfig } from '../../config.js'
 import { resolveEffectIds } from '../resolve-effects.js'
+import { toolResult } from '../tool-result.js'
 
 export const testNoPassthroughSchema = {
   effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
@@ -16,6 +17,8 @@ export async function testNoPassthrough(
 ): Promise<any> {
   return session.runWithConsoleCapture(async () => {
     const page = session.page!
+
+    await session.setBackend(session.backend)
 
     // Select effect
     await page.evaluate((id) => {
@@ -115,7 +118,7 @@ export function registerTestNoPassthrough(server: McpServer): void {
             results.push({ effect_id: id, status: 'error', error: err instanceof Error ? err.message : String(err) })
           }
         }
-        return { content: [{ type: 'text', text: JSON.stringify(results.length === 1 ? results[0] : results, null, 2) }] }
+        return toolResult(results.length === 1 ? results[0] : results)
       } finally {
         await session.teardown()
       }

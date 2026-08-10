@@ -4,6 +4,7 @@ import { BrowserSession } from '../../harness/browser-session.js'
 import type { CompileResult } from '../../harness/types.js'
 import { getConfig } from '../../config.js'
 import { resolveEffectIds } from '../resolve-effects.js'
+import { toolResult } from '../tool-result.js'
 
 const STATUS_TIMEOUT = 300000
 
@@ -85,7 +86,7 @@ export function registerCompileEffect(server: McpServer): void {
             results.push({ effect_id: id, status: 'error', error: err instanceof Error ? err.message : String(err) })
           }
         }
-        return { content: [{ type: 'text', text: JSON.stringify(results.length === 1 ? results[0] : results, null, 2) }] }
+        return toolResult(results.length === 1 ? results[0] : results)
       } finally {
         await session.teardown()
       }

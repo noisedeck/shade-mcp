@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { loadEffectDefinition } from '../../formats/index.js'
 import { getConfig } from '../../config.js'
 import { resolveEffectDir } from '../resolve-effects.js'
+import { toolResult } from '../tool-result.js'
 
 export const analyzeEffectSchema = {
   effect_id: z.string().describe('Effect ID (e.g., "synth/noise")'),
@@ -20,14 +21,14 @@ export function registerAnalyzeEffect(server: McpServer): void {
       const effectDir = resolveEffectDir(args.effect_id, config.effectsDir)
 
       if (!existsSync(effectDir)) {
-        return { content: [{ type: 'text', text: JSON.stringify({ error: `Effect not found: ${args.effect_id}` }) }] }
+        return toolResult({ error: `Effect not found: ${args.effect_id}` })
       }
 
       let def: any
       try {
         def = loadEffectDefinition(effectDir)
       } catch (err: any) {
-        return { content: [{ type: 'text', text: JSON.stringify({ error: err.message }) }] }
+        return toolResult({ error: err.message })
       }
 
       // Read shader sources
@@ -58,7 +59,7 @@ export function registerAnalyzeEffect(server: McpServer): void {
         shaders,
       }
 
-      return { content: [{ type: 'text', text: JSON.stringify(output, null, 2) }] }
+      return toolResult(output)
     }
   )
 }

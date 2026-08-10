@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { getAIProvider, callAI, NO_AI_KEY_MESSAGE } from '../../ai/provider.js'
 import { getConfig } from '../../config.js'
 import { resolveEffectDir } from '../resolve-effects.js'
+import { toolResult } from '../tool-result.js'
 
 export const analyzeBranchingSchema = {
   effect_id: z.string().describe('Effect ID (e.g., "synth/noise")'),
@@ -65,9 +66,11 @@ export async function analyzeBranching(effectId: string, backend: string): Promi
     (sum: number, s: any) => sum + (s.opportunities?.length || 0), 0
   ) || 0
 
+  // Model output is spread first so the fields computed here always win: a
+  // response carrying its own "status" must not overwrite our verdict.
   return {
-    status: totalOpportunities >= 2 ? 'warning' : 'ok',
     ...parsed,
+    status: totalOpportunities >= 2 ? 'warning' : 'ok',
   }
 }
 
@@ -78,7 +81,7 @@ export function registerAnalyzeBranching(server: McpServer): void {
     analyzeBranchingSchema,
     async (args: any) => {
       const result = await analyzeBranching(args.effect_id, args.backend)
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+      return toolResult(result)
     }
   )
 }

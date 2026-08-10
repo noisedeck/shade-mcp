@@ -4,6 +4,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, basename } from 'node:path'
 import { getConfig } from '../../config.js'
 import { resolveEffectDir } from '../resolve-effects.js'
+import { toolResult } from '../tool-result.js'
 
 export const compareShadersSchema = {
   effect_id: z.string().describe('Effect ID (e.g., "synth/noise")'),
@@ -134,7 +135,7 @@ export function registerCompareShaders(server: McpServer): void {
     compareShadersSchema,
     async (args: any) => {
       const result = await compareShaders(args.effect_id)
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+      return toolResult(result)
     }
   )
 }

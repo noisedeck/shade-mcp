@@ -33,4 +33,16 @@ describe('config', () => {
     const config = getConfig()
     expect(config.defaultBackend).toBe('webgpu')
   })
+
+  it('falls back to one browser when SHADE_MAX_BROWSERS is not a number', async () => {
+    vi.stubEnv('SHADE_MAX_BROWSERS', 'abc')
+    const { getConfig } = await import('../config.js')
+    expect(getConfig().maxBrowsers).toBe(1)
+  })
+
+  it('falls back to an OS-assigned port when SHADE_VIEWER_PORT is not a number', async () => {
+    vi.stubEnv('SHADE_VIEWER_PORT', 'abc')
+    const { getConfig } = await import('../config.js')
+    expect(getConfig().viewerPort).toBe(0)
+  })
 })

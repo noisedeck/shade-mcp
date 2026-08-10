@@ -5,6 +5,7 @@ import { join, basename } from 'node:path'
 import { getAIProvider, callAI, NO_AI_KEY_MESSAGE } from '../../ai/provider.js'
 import { getConfig } from '../../config.js'
 import { resolveEffectDir } from '../resolve-effects.js'
+import { toolResult } from '../tool-result.js'
 
 export const checkAlgEquivSchema = {
   effect_id: z.string().describe('Effect ID (e.g., "synth/noise")'),
@@ -82,7 +83,8 @@ export async function checkAlgEquiv(effectId: string): Promise<any> {
       try { parsed = JSON.parse(response) } catch { parsed = { parity: 'error', notes: response } }
     }
 
-    results.push({ program: pair.program, ...parsed })
+    // Spread first: the pair we matched on disk names the program, not the model.
+    results.push({ ...parsed, program: pair.program })
   }
 
   const divergent = results.filter(r => r.parity === 'divergent').length
@@ -104,7 +106,7 @@ export function registerCheckAlgEquiv(server: McpServer): void {
     checkAlgEquivSchema,
     async (args: any) => {
       const result = await checkAlgEquiv(args.effect_id)
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+      return toolResult(result)
     }
   )
 }

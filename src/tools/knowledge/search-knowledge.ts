@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { ShaderKnowledgeDB } from '../../knowledge/vector-db.js'
 import { CURATED_KNOWLEDGE, expandQueryWithSynonyms } from '../../knowledge/shader-knowledge.js'
+import { toolResult } from '../tool-result.js'
 
 let db: ShaderKnowledgeDB | null = null
 
@@ -48,7 +49,7 @@ export function registerSearchShaderKnowledge(server: McpServer): void {
           content: i < 3 ? r.content : undefined,
         })),
       }
-      return { content: [{ type: 'text', text: JSON.stringify(output, null, 2) }] }
+      return toolResult(output)
     }
   )
 }

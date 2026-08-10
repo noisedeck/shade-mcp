@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { getSharedEffectIndex } from '../../knowledge/shared-instances.js'
 import { expandQueryWithSynonyms } from '../../knowledge/shader-knowledge.js'
+import { toolResult } from '../tool-result.js'
 
 export const searchEffectsSchema = {
   query: z.string().describe('Search query - concept, algorithm, tag, or visual style'),
@@ -28,7 +29,7 @@ export function registerSearchEffects(server: McpServer): void {
         })),
         total: results.length,
       }
-      return { content: [{ type: 'text', text: JSON.stringify(output, null, 2) }] }
+      return toolResult(output)
     }
   )
 }

@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { GlslIndex } from '../../knowledge/glsl-index.js'
 import { getConfig } from '../../config.js'
+import { toolResult } from '../tool-result.js'
 
 let glslIndex: GlslIndex | null = null
 
@@ -39,7 +40,7 @@ export function registerSearchShaderSource(server: McpServer): void {
           context: r.context,
         })),
       }
-      return { content: [{ type: 'text', text: JSON.stringify(output, null, 2) }] }
+      return toolResult(output)
     }
   )
 }

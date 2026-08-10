@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { getSharedEffectIndex } from '../../knowledge/shared-instances.js'
+import { toolResult } from '../tool-result.js'
 
 export const listEffectsSchema = {
   namespace: z.string().optional().describe('Filter by namespace'),
@@ -26,7 +27,7 @@ export function registerListEffects(server: McpServer): void {
           passes: e.def.passes.length,
         })),
       }
-      return { content: [{ type: 'text', text: JSON.stringify(output, null, 2) }] }
+      return toolResult(output)
     }
   )
 }

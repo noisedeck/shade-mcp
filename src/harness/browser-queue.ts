@@ -8,7 +8,9 @@ const waiting: Array<() => void> = []
 let active = 0
 
 export function setMaxBrowsers(n: number): void {
-  maxConcurrency = Math.max(1, n)
+  // A non-numeric limit would make every comparison against it false, so
+  // acquireBrowserSlot would queue forever instead of admitting anyone.
+  maxConcurrency = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1
 }
 
 export function getMaxBrowsers(): number {
@@ -45,7 +47,9 @@ export function releaseBrowserSlot(): void {
 }
 
 export function resetBrowserQueue(): void {
+  // Resolve pending waiters rather than dropping them: a dropped waiter never
+  // settles, so its caller hangs for the life of the process.
+  while (waiting.length > 0) waiting.shift()!()
   active = 0
-  waiting.length = 0
   maxConcurrency = 1
 }
