@@ -2,6 +2,21 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { acquireServer, releaseServer, getServerUrl, getRefCount } from '../harness/server-manager.js'
 import { resolve } from 'node:path'
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { connect } from 'node:net'
+
+/** Sends a request with a literal path, bypassing client-side URL normalization. */
+function rawGet(port: number, rawPath: string): Promise<string> {
+  return new Promise((resolveRaw, reject) => {
+    let data = ''
+    const socket = connect(port, '127.0.0.1', () => {
+      socket.write(`GET ${rawPath} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n`)
+    })
+    socket.setTimeout(4000, () => { socket.destroy(); resolveRaw(data) })
+    socket.on('data', (chunk) => { data += chunk })
+    socket.on('end', () => resolveRaw(data))
+    socket.on('error', reject)
+  })
+}
 
 describe('server-manager', () => {
   it('getServerUrl returns correct URL format', () => {
@@ -123,6 +138,63 @@ describe('server-manager', () => {
         blocked = true
       }
       expect(blocked).toBe(true)
+    })
+
+    it('does not send a wildcard CORS header', async () => {
+      mkdirSync(tmpDir, { recursive: true })
+      writeFileSync(resolve(tmpDir, 'index.html'), '<h1>test</h1>')
+      mkdirSync(tmpEffects, { recursive: true })
+
+      const url = await acquireServer(testPort, tmpDir, tmpEffects)
+      const res = await fetch(`${url}/index.html`)
+      expect(res.ok).toBe(true)
+      expect(res.headers.get('access-control-allow-origin')).toBeNull()
+    })
+
+    it('survives malformed percent-encoding in the URL', async () => {
+      mkdirSync(tmpDir, { recursive: true })
+      writeFileSync(resolve(tmpDir, 'index.html'), '<h1>test</h1>')
+      mkdirSync(tmpEffects, { recursive: true })
+
+      const url = await acquireServer(testPort, tmpDir, tmpEffects)
+      const bad = await fetch(`${url}/%`)
+      expect(bad.status).toBe(400)
+
+      // The server must still be alive for subsequent requests
+      const good = await fetch(`${url}/index.html`)
+      expect(good.ok).toBe(true)
+    })
+
+    it('rejects raw traversal into a sibling directory sharing the root prefix', async () => {
+      mkdirSync(tmpDir, { recursive: true })
+      writeFileSync(resolve(tmpDir, 'index.html'), '')
+      mkdirSync(tmpEffects, { recursive: true })
+      // Sibling whose path starts with the effects root string
+      const sibling = tmpEffects + '-backup'
+      mkdirSync(sibling, { recursive: true })
+      writeFileSync(resolve(sibling, 'secret.json'), '{"key":"SHOULD-NOT-LEAK"}')
+
+      const url = await acquireServer(testPort, tmpDir, tmpEffects)
+      const port = Number(new URL(url).port)
+      const siblingName = sibling.split('/').pop()
+      // Encoded slashes keep this from being parsed as a dot segment, so the
+      // traversal reappears when the handler decodes the path after parsing.
+      const raw = await rawGet(port, `/effects/..%2f${siblingName}%2fsecret.json`)
+      expect(raw).not.toContain('SHOULD-NOT-LEAK')
+
+      rmSync(sibling, { recursive: true, force: true })
+    })
+
+    it('refuses to serve dotfiles from the viewer root', async () => {
+      mkdirSync(tmpDir, { recursive: true })
+      writeFileSync(resolve(tmpDir, 'index.html'), '')
+      writeFileSync(resolve(tmpDir, '.anthropic'), 'sk-ant-SHOULD-NOT-LEAK')
+      mkdirSync(tmpEffects, { recursive: true })
+
+      const url = await acquireServer(testPort, tmpDir, tmpEffects)
+      const res = await fetch(`${url}/.anthropic`)
+      expect(res.ok).toBe(false)
+      expect(await res.text()).not.toContain('SHOULD-NOT-LEAK')
     })
 
     it('strips query strings from URLs', async () => {

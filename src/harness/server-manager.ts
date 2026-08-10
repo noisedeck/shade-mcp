@@ -1,12 +1,14 @@
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http'
-import { createReadStream, existsSync } from 'node:fs'
-import { extname, join, resolve as pathResolve, normalize, basename } from 'node:path'
+import { createReadStream, existsSync, realpathSync } from 'node:fs'
+import { extname, join, resolve as pathResolve, normalize, basename, relative, sep } from 'node:path'
 
 let httpServer: Server | null = null
 let refCount = 0
 let activePort = 0
 let requestedPort = 0
 
+// Only these extensions are served. Anything else — including credential-shaped
+// files such as .pem or extensionless keys — is refused rather than guessed at.
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
   '.js': 'application/javascript',
@@ -15,23 +17,68 @@ const MIME_TYPES: Record<string, string> = {
   '.css': 'text/css',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
+  '.ico': 'image/x-icon',
   '.svg': 'image/svg+xml',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
   '.wasm': 'application/wasm',
+  '.map': 'application/json',
+  '.txt': 'text/plain',
+  '.csv': 'text/csv',
+  '.xml': 'application/xml',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mp3': 'audio/mpeg',
+  '.ogg': 'audio/ogg',
+  '.wav': 'audio/wav',
+  '.bin': 'application/octet-stream',
+  '.data': 'application/octet-stream',
   '.glsl': 'text/plain',
   '.wgsl': 'text/plain',
   '.frag': 'text/plain',
   '.vert': 'text/plain',
+  '.comp': 'text/plain',
 }
 
 function safePath(root: string, relPath: string): string | null {
-  const resolved = pathResolve(root, normalize(relPath))
-  if (!resolved.startsWith(pathResolve(root))) return null
+  const rootResolved = pathResolve(root)
+  const resolved = pathResolve(rootResolved, normalize(relPath))
+
+  // Containment must respect segment boundaries: a sibling directory whose name
+  // merely starts with the root's name is outside the root.
+  if (resolved !== rootResolved && !resolved.startsWith(rootResolved + sep)) return null
+
+  // Never serve dotfiles or anything beneath a dot-directory: that is where API
+  // keys (.anthropic, .openai), .env files and .git internals live.
+  const rel = relative(rootResolved, resolved)
+  if (rel && rel.split(sep).some(segment => segment.startsWith('.'))) return null
+
+  // Re-check containment after symlink resolution so links cannot escape the root.
+  try {
+    const realRoot = realpathSync(rootResolved)
+    const realTarget = realpathSync(resolved)
+    if (realTarget !== realRoot && !realTarget.startsWith(realRoot + sep)) return null
+  } catch {
+    // Path does not exist yet; serveFile reports 404 below.
+  }
+
   return resolved
 }
 
 function serveFile(filePath: string, res: ServerResponse): void {
   const ext = extname(filePath).toLowerCase()
-  const mime = MIME_TYPES[ext] || 'application/octet-stream'
+  const mime = MIME_TYPES[ext]
+  if (!mime) {
+    res.writeHead(404)
+    res.end('Not Found')
+    return
+  }
   const stream = createReadStream(filePath)
   stream.on('error', (err) => {
     if (!res.headersSent) {
@@ -44,7 +91,6 @@ function serveFile(filePath: string, res: ServerResponse): void {
     res.writeHead(200, {
       'Content-Type': mime,
       'Cache-Control': 'no-store',
-      'Access-Control-Allow-Origin': '*',
     })
     stream.pipe(res)
   })
@@ -68,9 +114,18 @@ export async function acquireServer(
   const isFlatLayout = existsSync(join(effectsDir, 'definition.json')) || existsSync(join(effectsDir, 'definition.js'))
   const flatEffectName = isFlatLayout ? basename(effectsDir) : null
 
-  httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
-    const parsedUrl = new URL(req.url || '/', `http://${req.headers.host}`)
-    const url = decodeURIComponent(parsedUrl.pathname)
+  const route = (req: IncomingMessage, res: ServerResponse): void => {
+    let url: string
+    try {
+      const parsedUrl = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`)
+      url = decodeURIComponent(parsedUrl.pathname)
+    } catch {
+      // Malformed request target or Host header. Without this the throw would
+      // escape the request listener and take the whole MCP server down.
+      res.writeHead(400)
+      res.end('Bad Request')
+      return
+    }
 
     // Route: /effects/* → effectsDir
     if (url.startsWith('/effects/')) {
@@ -109,6 +164,21 @@ export async function acquireServer(
       return
     }
     serveFile(filePath, res)
+  }
+
+  httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
+    try {
+      route(req, res)
+    } catch {
+      if (!res.headersSent) res.writeHead(500)
+      res.end()
+    }
+  })
+
+  // Malformed HTTP framing must not surface as an uncaught exception either.
+  httpServer.on('clientError', (_err, socket) => {
+    if (socket.writable) socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n')
+    else socket.destroy()
   })
 
   await new Promise<void>((resolve, reject) => {

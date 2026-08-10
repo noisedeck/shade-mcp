@@ -1,5 +1,5 @@
 import { readdirSync, existsSync, statSync } from 'node:fs'
-import { join, basename } from 'node:path'
+import { join, basename, resolve, isAbsolute, sep } from 'node:path'
 
 export function resolveEffectIds(
   args: { effect_id?: string; effects?: string },
@@ -68,7 +68,20 @@ export function resolveEffectDir(effectId: string, effectsDir: string): string {
     (existsSync(join(effectsDir, 'definition.json')) || existsSync(join(effectsDir, 'definition.js')))) {
     return effectsDir
   }
-  return join(effectsDir, ...effectId.split('/'))
+
+  // Effect IDs arrive from tool callers and are turned into filesystem paths, so
+  // they must stay inside the effects directory.
+  const segments = effectId.split('/')
+  if (isAbsolute(effectId) || segments.some(s => s === '..' || s === '.')) {
+    throw new Error(`Invalid effect id: ${effectId}`)
+  }
+  const root = resolve(effectsDir)
+  const target = resolve(effectsDir, ...segments)
+  if (target !== root && !target.startsWith(root + sep)) {
+    throw new Error(`Invalid effect id: ${effectId}`)
+  }
+
+  return join(effectsDir, ...segments)
 }
 
 export function matchEffects(allEffects: string[], pattern: string): string[] {
