@@ -12,7 +12,7 @@ export const renderEffectFrameSchema = {
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
   warmup_frames: z.number().optional().default(10).describe('Frames to wait before capture'),
   capture_image: z.boolean().optional().default(false).describe('Capture PNG data URI'),
-  uniforms: z.record(z.number()).optional().describe('Uniform overrides'),
+  uniforms: z.record(z.string(), z.number()).optional().describe('Uniform overrides'),
   time: z.number().optional().describe('Pause and render at specific time value (seconds)'),
   resolution: z.tuple([z.number(), z.number()]).optional().describe('Viewport resolution [width, height]'),
 }

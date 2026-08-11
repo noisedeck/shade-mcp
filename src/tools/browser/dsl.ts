@@ -9,7 +9,7 @@ export const runDslProgramSchema = {
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
   warmup_frames: z.number().optional().default(10).describe('Frames to wait'),
   capture_image: z.boolean().optional().default(false).describe('Capture PNG data URI'),
-  uniforms: z.record(z.number()).optional().describe('Uniform overrides'),
+  uniforms: z.record(z.string(), z.number()).optional().describe('Uniform overrides'),
 }
 
 export async function runDslProgram(

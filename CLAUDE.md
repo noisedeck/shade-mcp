@@ -1,6 +1,6 @@
 # shade-mcp
 
-MCP server for shader effect development. TypeScript, ESM only, Node 18+.
+MCP server for shader effect development. TypeScript, ESM only, Node 22+.
 
 ## Build & Test
 

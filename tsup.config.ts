@@ -10,7 +10,7 @@ export default defineConfig({
     'knowledge/index': 'src/knowledge/index.ts',
   },
   format: ['esm'],
-  target: 'node18',
+  target: 'node22',
   outDir: 'dist',
   clean: true,
   sourcemap: true,
