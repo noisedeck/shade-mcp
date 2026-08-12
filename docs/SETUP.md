@@ -7,7 +7,7 @@ locations; MCP clients do not expand `~`, so use absolute paths.
 
 ## Prerequisites
 
-Node.js 18 or newer. Build shade-mcp once, from the shade-mcp directory:
+Node.js 22 or newer. Build shade-mcp once, from the shade-mcp directory:
 
 ```bash
 cd /path/to/shade-mcp

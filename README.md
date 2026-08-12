@@ -9,7 +9,7 @@ Distilled from three projects:
 
 ## Requirements
 
-- Node.js 18 or newer
+- Node.js 22 or newer
 - A viewer page, for the browser tools only — shade-mcp does not bundle one. See [Viewer](#viewer).
 
 ## Quick Start

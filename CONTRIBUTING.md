@@ -23,7 +23,7 @@ is failing.
 
 ## Conventions
 
-- ESM only, Node 18 or newer.
+- ESM only, Node 22 or newer.
 - Each tool lives in `src/tools/<category>/` and exports a `register*` function
   that takes an `McpServer`, plus a plain function holding the logic so it can
   be tested without a server.
