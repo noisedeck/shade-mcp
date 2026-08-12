@@ -172,7 +172,7 @@ If both old and new MCPs are active, you'll get duplicate tool names and unpredi
 
 **Browser tools hang or time out** — Check three things: `npm run setup` has installed Chromium; `SHADE_VIEWER_ROOT` points at a directory containing the viewer's `index.html`; and `SHADE_GLOBALS_PREFIX` matches the globals that viewer exposes. A prefix mismatch means the renderer global never appears and setup waits for it.
 
-**A browser window opens on every call** — That is the default. Set `SHADE_HEADLESS=1` to run Chromium headless, which is also required on machines with no display.
+**I want to watch the render happen** — Set `SHADE_HEADLESS=0` to run headed. The default is headless, which is also the only mode that works on a machine with no display.
 
 **AI tools return "No API key"** — Set `ANTHROPIC_API_KEY` (preferred) or `OPENAI_API_KEY` in the env block of your MCP config, or create a `.anthropic` / `.openai` file in the project root containing just the key.
 
@@ -188,7 +188,7 @@ If both old and new MCPs are active, you'll get duplicate tool names and unpredi
 | `SHADE_VIEWER_PORT` | No | `0` (OS-assigned) | HTTP server port |
 | `SHADE_BACKEND` | No | `webgl2` | Default backend (`webgl2` or `webgpu`) |
 | `SHADE_MAX_BROWSERS` | No | `1` | Concurrent browser sessions |
-| `SHADE_HEADLESS` | No | unset (headed) | Set to `1` to run Chromium headless |
+| `SHADE_HEADLESS` | No | `1` (headless) | Set to `0` to watch the browser window |
 | `ANTHROPIC_API_KEY` | No | — | For AI-powered tools |
 | `OPENAI_API_KEY` | No | — | Fallback AI provider |
 

@@ -8,6 +8,7 @@ vi.mock('playwright', () => ({
   chromium: { launch: vi.fn(async () => { throw new Error('launch failed') }) },
 }))
 
+import { chromium } from 'playwright'
 import { BrowserSession } from '../harness/browser-session.js'
 import { getRefCount, releaseServer } from '../harness/server-manager.js'
 import {
@@ -64,6 +65,30 @@ describe('browser session lifecycle', () => {
     await session.teardown()
     expect(getRefCount()).toBe(0)
     expect(getActiveBrowsers()).toBe(0)
+  })
+
+  it('launches headless by default', async () => {
+    const session = new BrowserSession({
+      backend: 'webgl2',
+      viewerPort: 0,
+      viewerRoot: tmpDir,
+      effectsDir: tmpEffects,
+    })
+    await expect(session.setup()).rejects.toThrow('launch failed')
+    expect(vi.mocked(chromium.launch).mock.calls.at(-1)?.[0]).toMatchObject({ headless: true })
+  })
+
+  it('launches headed when SHADE_HEADLESS is 0', async () => {
+    vi.stubEnv('SHADE_HEADLESS', '0')
+    const session = new BrowserSession({
+      backend: 'webgl2',
+      viewerPort: 0,
+      viewerRoot: tmpDir,
+      effectsDir: tmpEffects,
+    })
+    await expect(session.setup()).rejects.toThrow('launch failed')
+    expect(vi.mocked(chromium.launch).mock.calls.at(-1)?.[0]).toMatchObject({ headless: false })
+    vi.unstubAllEnvs()
   })
 
   it('teardown on a session that was never set up releases nothing', async () => {

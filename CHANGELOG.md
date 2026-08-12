@@ -20,6 +20,9 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   let a tool argument read files elsewhere on disk.
 - A malformed request target returns 400 instead of throwing an uncaught
   `URIError` that terminated the whole server process.
+- `matchEffects` escapes its pattern instead of compiling caller-supplied text
+  as a regular expression, where `(a|b)/*` matched by alternation and a
+  backtracking pattern could stall the process.
 
 ### Fixed
 
@@ -45,6 +48,9 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- **Chromium runs headless by default.** A visible window on every tool call is
+  noise, and launching headed fails outright on a machine with no display. Set
+  `SHADE_HEADLESS=0` to watch the browser again.
 - `zod` is declared as a direct dependency instead of resolving through the
   MCP SDK.
 - Published packages contain only `dist/`, README and LICENSE.

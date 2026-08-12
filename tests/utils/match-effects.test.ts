@@ -23,4 +23,13 @@ describe('matchEffects', () => {
   it('returns empty for no match', () => {
     expect(matchEffects(allEffects, 'nonexistent/*')).toEqual([])
   })
+
+  it('treats regex metacharacters in a pattern as literal text', () => {
+    // "." must not stand in for "/" — only "*" is a wildcard here.
+    expect(matchEffects(allEffects, 'synth.noise')).toEqual([])
+  })
+
+  it('does not compile a caller-supplied pattern as a regex', () => {
+    expect(matchEffects(allEffects, '(synth|filter)/*')).toEqual([])
+  })
 })

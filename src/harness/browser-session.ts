@@ -52,8 +52,10 @@ export class BrowserSession {
     this.viewerPath = opts.viewerPath ?? config.viewerPath ?? '/'
     this.options = {
       backend: opts.backend,
-      // headless is opt-in via { headless: true } or SHADE_HEADLESS=1. Default headed.
-      headless: opts.headless ?? (process.env.SHADE_HEADLESS === '1' || process.env.SHADE_HEADLESS === 'true'),
+      // Headless by default: a visible window on every tool call is noise, and
+      // launching headed fails outright wherever there is no display. Opt back
+      // in with { headless: false } or SHADE_HEADLESS=0.
+      headless: opts.headless ?? !(process.env.SHADE_HEADLESS === '0' || process.env.SHADE_HEADLESS === 'false'),
       viewerPort: opts.viewerPort ?? config.viewerPort,
       viewerRoot: opts.viewerRoot ?? process.env.SHADE_VIEWER_ROOT ?? resolve(config.projectRoot, 'viewer'),
       effectsDir: opts.effectsDir ?? config.effectsDir

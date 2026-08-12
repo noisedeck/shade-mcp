@@ -76,7 +76,7 @@ shade-mcp is configured entirely via env vars. Each consumer project points its 
 | `SHADE_GLOBALS_PREFIX` | No | `__shade` | Window globals prefix (e.g., `__portable` → `__portableCanvasRenderer`) |
 | `SHADE_BACKEND` | No | `webgl2` | Default rendering backend |
 | `SHADE_MAX_BROWSERS` | No | `1` | Max concurrent browser sessions (pipelining) |
-| `SHADE_HEADLESS` | No | unset (headed) | Set `1` to run Chromium headless; required where there is no display |
+| `SHADE_HEADLESS` | No | `1` (headless) | Set `0` to run headed; headless is the only mode that works with no display |
 
 ## Consumer Projects
 

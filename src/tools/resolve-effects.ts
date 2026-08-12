@@ -88,6 +88,9 @@ export function matchEffects(allEffects: string[], pattern: string): string[] {
   if (!pattern.includes('*')) {
     return allEffects.filter(e => e === pattern)
   }
-  const regex = new RegExp('^' + pattern.replace(/\*/g, '[^/]+') + '$')
+  // Escape everything first so a caller-supplied pattern cannot inject regex
+  // syntax (or a catastrophically backtracking one); `*` is the only wildcard.
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp('^' + escaped.replace(/\*/g, '[^/]+') + '$')
   return allEffects.filter(e => regex.test(e))
 }

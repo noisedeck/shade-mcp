@@ -49,7 +49,7 @@ Environment variables:
 | `SHADE_GLOBALS_PREFIX` | `__shade` | Prefix of the viewer's window globals |
 | `SHADE_BACKEND` | `webgl2` | Default rendering backend (`webgl2` or `webgpu`) |
 | `SHADE_MAX_BROWSERS` | `1` | Concurrent browser sessions |
-| `SHADE_HEADLESS` | unset (headed) | Set to `1` to run Chromium headless |
+| `SHADE_HEADLESS` | `1` (headless) | Set to `0` to watch the browser window |
 | `ANTHROPIC_API_KEY` | — | Required for AI-powered tools (vision, analysis) |
 | `OPENAI_API_KEY` | — | Fallback AI provider |
 
