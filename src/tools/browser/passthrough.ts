@@ -30,7 +30,7 @@ export async function testNoPassthrough(
       const s = document.getElementById('status')
       const t = (s?.textContent || '').toLowerCase()
       return t.includes('loaded') || t.includes('compiled') || t.includes('ready') || t.includes('error')
-    }, { timeout: 300000 })
+    }, { timeout: session.timeoutMs })
 
     // Check if filter effect and test passthrough
     const result = await page.evaluate((globals) => {

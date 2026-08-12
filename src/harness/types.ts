@@ -40,6 +40,7 @@ export interface BrowserSessionOptions {
   viewerPath?: string
   effectsDir?: string
   globals?: ViewerGlobals
+  timeoutMs?: number
 }
 
 export interface ImageMetrics {

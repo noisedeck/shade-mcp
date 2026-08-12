@@ -12,12 +12,15 @@ export const describeEffectFrameSchema = {
   effects: z.string().optional().describe('CSV of effect IDs'),
   prompt: z.string().describe('Analysis prompt for the AI vision model'),
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
+  capture_image: z.boolean().optional().default(false)
+    .describe('Return the rendered PNG data URI alongside the description'),
 }
 
 export async function describeEffectFrame(
   session: BrowserSession,
   effectId: string,
   prompt: string,
+  options: { captureImage?: boolean } = {},
 ): Promise<any> {
   const config = getConfig()
   const ai = getAIProvider({ projectRoot: config.projectRoot })
@@ -25,7 +28,8 @@ export async function describeEffectFrame(
 
   const renderResult = await renderEffectFrame(session, effectId, { captureImage: true })
   if (renderResult.status === 'error' || !renderResult.frame?.image_uri) {
-    return { status: 'error', error: 'Failed to render frame' }
+    const reason = (renderResult as { error?: string }).error
+    return { status: 'error', error: reason ? `Failed to render frame: ${reason}` : 'Failed to render frame' }
   }
 
   const vision = await callAI({
@@ -39,14 +43,25 @@ export async function describeEffectFrame(
     ai,
   })
 
-  let parsed = null
+  // Model output is free-form: anything that is not a JSON object becomes the
+  // description, so callers always see the same shape.
+  let parsed: any = null
   if (vision) {
-    try { parsed = JSON.parse(vision) } catch { parsed = { description: vision, tags: [], notes: null } }
+    try {
+      const raw = JSON.parse(vision)
+      parsed = raw && typeof raw === 'object' && !Array.isArray(raw)
+        ? raw
+        : { description: typeof raw === 'string' ? raw : vision, tags: [], notes: null }
+    } catch {
+      parsed = { description: vision, tags: [], notes: null }
+    }
   }
 
+  // The image went to the vision model; echoing megabytes of base64 back to the
+  // caller costs it context it did not ask for.
   return {
     status: 'ok',
-    frame: { image_uri: renderResult.frame.image_uri },
+    ...(options.captureImage ? { frame: { image_uri: renderResult.frame.image_uri } } : {}),
     vision: parsed,
   }
 }
@@ -65,7 +80,7 @@ export function registerDescribeEffectFrame(server: McpServer): void {
         const results = []
         for (const id of effectIds) {
           try {
-            results.push({ effect_id: id, ...await describeEffectFrame(session, id, args.prompt) })
+            results.push({ effect_id: id, ...await describeEffectFrame(session, id, args.prompt, { captureImage: args.capture_image }) })
           } catch (err) {
             results.push({ effect_id: id, status: 'error', error: err instanceof Error ? err.message : String(err) })
           }

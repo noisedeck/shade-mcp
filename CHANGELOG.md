@@ -26,6 +26,21 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Fixed
 
+- AI provider calls are bounded. They previously had no timeout at all, so a
+  stalled provider held the caller's browser slot for the SDK default of about
+  ten minutes; requests now time out after `SHADE_AI_TIMEOUT_MS` with retries
+  capped at one, so a stall cannot multiply the wait.
+- `SIGINT` and `SIGTERM` tear down live browser sessions before exiting. An MCP
+  client killing the server used to leave Chromium running and the viewer port
+  bound.
+- The effect index is rebuilt rather than cached for the life of the process,
+  so an effect written during a session is visible to `searchEffects` and
+  `listEffects` instead of missing until restart. Concurrent lookups share one
+  build, and `generateManifest` drops the cached index after rewriting the
+  library on disk.
+- `describeEffectFrame` reports why a render failed instead of the bare
+  "Failed to render frame", and normalizes model output that is not a JSON
+  object so callers always see the same shape.
 - A failed `setup()` handed back the browser slot but never the server it had
   already acquired, while `teardown()` released both unconditionally — so the
   `finally` block every tool uses could return resources the session never held.
@@ -48,6 +63,13 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- **`describeEffectFrame` no longer returns the rendered image by default.**
+  The frame still goes to the vision model; echoing megabytes of base64 back to
+  the caller spent context it had not asked for. Pass `capture_image: true` to
+  get it.
+- Every browser and page operation shares one configurable ceiling
+  (`SHADE_TIMEOUT_MS`), replacing nine hardcoded five-minute literals and two
+  duplicate constants. The AI model is selectable with `SHADE_AI_MODEL`.
 - **Chromium runs headless by default.** A visible window on every tool call is
   noise, and launching headed fails outright on a machine with no display. Set
   `SHADE_HEADLESS=0` to watch the browser again.

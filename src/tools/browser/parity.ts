@@ -25,7 +25,7 @@ async function waitReady(session: BrowserSession): Promise<void> {
     const p = w[globals.renderingPipeline]
     if (!p || p.isCompiling) return false
     return !!(p.graph && p.graph.passes && p.graph.passes.length > 0)
-  }, session.globals, { timeout: 300000, polling: 50 })
+  }, session.globals, { timeout: session.timeoutMs, polling: 50 })
 }
 
 // Let the live render loop draw real frames so the backend/effect is fully warm

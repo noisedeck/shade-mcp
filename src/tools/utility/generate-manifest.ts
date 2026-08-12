@@ -4,6 +4,7 @@ import { readdirSync, readFileSync, writeFileSync, existsSync, statSync } from '
 import { join } from 'node:path'
 import { getConfig } from '../../config.js'
 import { toolResult } from '../tool-result.js'
+import { invalidateSharedEffectIndex } from '../../knowledge/shared-instances.js'
 
 export const generateManifestSchema = {}
 
@@ -181,17 +182,14 @@ export function registerGenerateManifest(server: McpServer): void {
 
       const manifestPath = join(effectsDir, 'manifest.json')
       writeFileSync(manifestPath, JSON.stringify(sortKeys(manifest)))
+      // The library just changed underneath the cached index.
+      invalidateSharedEffectIndex()
 
-      return {
-        content: [{
-          type: 'text',
-          text: JSON.stringify({
-            status: 'ok',
-            path: manifestPath,
-            effectCount: Object.keys(manifest).length,
-          }, null, 2)
-        }]
-      }
+      return toolResult({
+        status: 'ok',
+        path: manifestPath,
+        effectCount: Object.keys(manifest).length,
+      })
     }
   )
 }

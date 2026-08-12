@@ -5,9 +5,8 @@ import type { BrowserSessionOptions, CompileResult, RenderResult, BenchmarkResul
 import { DEFAULT_GLOBALS, globalsFromPrefix } from './types.js'
 import { acquireServer, releaseServer, getServerUrl } from './server-manager.js'
 import { acquireBrowserSlot, releaseBrowserSlot } from './browser-queue.js'
+import { trackSession, untrackSession } from './live-sessions.js'
 import { getConfig } from '../config.js'
-
-const STATUS_TIMEOUT = 300000
 
 interface ConsoleEntry {
   type: string
@@ -34,8 +33,10 @@ function getBrowserLaunchOptions(headless: boolean, backend: Backend) {
 }
 
 export class BrowserSession {
-  private options: Required<Omit<BrowserSessionOptions, 'globals' | 'viewerPath'>>
+  private options: Required<Omit<BrowserSessionOptions, 'globals' | 'viewerPath' | 'timeoutMs'>>
   private viewerPath: string
+  /** Ceiling for every page operation this session performs. */
+  public readonly timeoutMs: number
   private browser: Browser | null = null
   private context: BrowserContext | null = null
   public page: Page | null = null
@@ -50,6 +51,7 @@ export class BrowserSession {
     const config = getConfig()
     this.globals = opts.globals ?? (config.globalsPrefix ? globalsFromPrefix(config.globalsPrefix) : DEFAULT_GLOBALS)
     this.viewerPath = opts.viewerPath ?? config.viewerPath ?? '/'
+    this.timeoutMs = opts.timeoutMs ?? config.timeoutMs
     this.options = {
       backend: opts.backend,
       // Headless by default: a visible window on every tool call is noise, and
@@ -85,8 +87,8 @@ export class BrowserSession {
       })
 
       this.page = await this.context.newPage()
-      this.page.setDefaultTimeout(STATUS_TIMEOUT)
-      this.page.setDefaultNavigationTimeout(STATUS_TIMEOUT)
+      this.page.setDefaultTimeout(this.timeoutMs)
+      this.page.setDefaultNavigationTimeout(this.timeoutMs)
 
       this.consoleMessages = []
       this.page.on('console', (msg: ConsoleMessage) => {
@@ -110,10 +112,11 @@ export class BrowserSession {
       await this.page.waitForFunction(
         (name) => !!(window as any)[name],
         rendererGlobal,
-        { timeout: STATUS_TIMEOUT }
+        { timeout: this.timeoutMs }
       )
 
       this._isSetup = true
+      trackSession(this)
     } catch (err) {
       // Clean up partially initialized resources and hand back whatever this
       // session actually took, including the server acquired above.
@@ -158,6 +161,7 @@ export class BrowserSession {
       this.browser = null
     }
     this.releaseShared()
+    untrackSession(this)
     this.consoleMessages = []
     this._isSetup = false
   }
@@ -195,7 +199,7 @@ export class BrowserSession {
         if (nowBackend === targetBackend) break
         await new Promise(r => setTimeout(r, 50))
       }
-    }, { targetBackend, timeout: STATUS_TIMEOUT, globals: this.globals })
+    }, { targetBackend, timeout: this.timeoutMs, globals: this.globals })
   }
 
   clearConsoleMessages(): void {

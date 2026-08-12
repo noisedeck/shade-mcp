@@ -45,4 +45,37 @@ describe('config', () => {
     const { getConfig } = await import('../config.js')
     expect(getConfig().viewerPort).toBe(0)
   })
+
+  it('defaults the browser and AI timeouts', async () => {
+    const { getConfig } = await import('../config.js')
+    const config = getConfig()
+    expect(config.timeoutMs).toBe(300000)
+    expect(config.aiTimeoutMs).toBe(120000)
+  })
+
+  it('reads SHADE_TIMEOUT_MS and SHADE_AI_TIMEOUT_MS from env', async () => {
+    vi.stubEnv('SHADE_TIMEOUT_MS', '5000')
+    vi.stubEnv('SHADE_AI_TIMEOUT_MS', '7000')
+    const { getConfig } = await import('../config.js')
+    const config = getConfig()
+    expect(config.timeoutMs).toBe(5000)
+    expect(config.aiTimeoutMs).toBe(7000)
+  })
+
+  it('ignores a non-positive or non-numeric timeout', async () => {
+    vi.stubEnv('SHADE_TIMEOUT_MS', '0')
+    vi.stubEnv('SHADE_AI_TIMEOUT_MS', 'soon')
+    const { getConfig } = await import('../config.js')
+    const config = getConfig()
+    expect(config.timeoutMs).toBe(300000)
+    expect(config.aiTimeoutMs).toBe(120000)
+  })
+
+  it('reads an AI model override from env', async () => {
+    const { getConfig } = await import('../config.js')
+    expect(getConfig().aiModel).toBeUndefined()
+    vi.stubEnv('SHADE_AI_MODEL', 'some-model')
+    const { getConfig: reload } = await import('../config.js')
+    expect(reload().aiModel).toBe('some-model')
+  })
 })

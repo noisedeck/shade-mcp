@@ -2,6 +2,19 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import Anthropic from '@anthropic-ai/sdk'
 import OpenAI from 'openai'
+import { getConfig } from '../config.js'
+
+const DEFAULT_ANTHROPIC_MODEL = 'claude-sonnet-4-5-20250929'
+const DEFAULT_OPENAI_MODEL = 'gpt-4o'
+
+/**
+ * Bounds every provider request. Without a timeout the SDK waits ~10 minutes,
+ * and the calling tool holds its browser slot for the duration; retries are
+ * capped at one so a stalling provider cannot multiply that wait.
+ */
+export function aiClientOptions(): { timeout: number; maxRetries: number } {
+  return { timeout: getConfig().aiTimeoutMs, maxRetries: 1 }
+}
 
 export interface AIProvider {
   provider: 'anthropic' | 'openai'
@@ -28,22 +41,23 @@ function readKeyFile(projectRoot: string, filename: string): string | null {
 
 export function getAIProvider(options: { projectRoot: string }): AIProvider | null {
   // Env vars first (highest priority)
+  const model = getConfig().aiModel
   const anthropicEnv = process.env.ANTHROPIC_API_KEY
   if (anthropicEnv) {
-    return { provider: 'anthropic', apiKey: anthropicEnv, model: 'claude-sonnet-4-5-20250929' }
+    return { provider: 'anthropic', apiKey: anthropicEnv, model: model ?? DEFAULT_ANTHROPIC_MODEL }
   }
   const openaiEnv = process.env.OPENAI_API_KEY
   if (openaiEnv) {
-    return { provider: 'openai', apiKey: openaiEnv, model: 'gpt-4o' }
+    return { provider: 'openai', apiKey: openaiEnv, model: model ?? DEFAULT_OPENAI_MODEL }
   }
   // Dotfiles
   const anthropicKey = readKeyFile(options.projectRoot, '.anthropic')
   if (anthropicKey) {
-    return { provider: 'anthropic', apiKey: anthropicKey, model: 'claude-sonnet-4-5-20250929' }
+    return { provider: 'anthropic', apiKey: anthropicKey, model: model ?? DEFAULT_ANTHROPIC_MODEL }
   }
   const openaiKey = readKeyFile(options.projectRoot, '.openai')
   if (openaiKey) {
-    return { provider: 'openai', apiKey: openaiKey, model: 'gpt-4o' }
+    return { provider: 'openai', apiKey: openaiKey, model: model ?? DEFAULT_OPENAI_MODEL }
   }
   return null
 }
@@ -56,7 +70,7 @@ export async function callAI(options: CallAIOptions): Promise<string | null> {
 }
 
 async function callAnthropic(options: CallAIOptions): Promise<string | null> {
-  const client = new Anthropic({ apiKey: options.ai.apiKey })
+  const client = new Anthropic({ apiKey: options.ai.apiKey, ...aiClientOptions() })
 
   const content: Anthropic.MessageCreateParams['messages'][0]['content'] = options.userContent.map(block => {
     if (block.type === 'image_url' && block.image_url) {
@@ -89,7 +103,7 @@ async function callAnthropic(options: CallAIOptions): Promise<string | null> {
 }
 
 async function callOpenAI(options: CallAIOptions): Promise<string | null> {
-  const client = new OpenAI({ apiKey: options.ai.apiKey })
+  const client = new OpenAI({ apiKey: options.ai.apiKey, ...aiClientOptions() })
 
   const messages: OpenAI.ChatCompletionMessageParam[] = [
     { role: 'system', content: options.system },

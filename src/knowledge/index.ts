@@ -7,7 +7,7 @@ export { ShaderKnowledgeDB } from './vector-db.js'
 export type { KnowledgeDocument, SearchResult, SearchOptions } from './vector-db.js'
 
 // Shared instances
-export { getSharedEffectIndex } from './shared-instances.js'
+export { getSharedEffectIndex, invalidateSharedEffectIndex } from './shared-instances.js'
 
 // Query utilities
 export { expandQueryWithSynonyms, TECHNIQUE_SYNONYMS, CURATED_KNOWLEDGE } from './shader-knowledge.js'

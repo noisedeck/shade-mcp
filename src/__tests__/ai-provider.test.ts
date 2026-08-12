@@ -34,4 +34,34 @@ describe('getAIProvider', () => {
     const provider = getAIProvider({ projectRoot: '/nonexistent' })
     expect(provider?.provider).toBe('anthropic')
   })
+
+  it('honours an explicit model override', async () => {
+    vi.stubEnv('ANTHROPIC_API_KEY', 'test-key')
+    vi.stubEnv('SHADE_AI_MODEL', 'claude-custom')
+    const { getAIProvider } = await import('../ai/provider.js')
+    expect(getAIProvider({ projectRoot: '/nonexistent' })?.model).toBe('claude-custom')
+  })
+})
+
+describe('AI request bounds', () => {
+  beforeEach(() => {
+    vi.unstubAllEnvs()
+    vi.resetModules()
+  })
+
+  it('bounds every call with the configured timeout', async () => {
+    const { aiClientOptions } = await import('../ai/provider.js')
+    expect(aiClientOptions().timeout).toBe(120000)
+  })
+
+  it('takes the timeout from SHADE_AI_TIMEOUT_MS', async () => {
+    vi.stubEnv('SHADE_AI_TIMEOUT_MS', '9000')
+    const { aiClientOptions } = await import('../ai/provider.js')
+    expect(aiClientOptions().timeout).toBe(9000)
+  })
+
+  it('keeps retries low so a stall cannot multiply the wait', async () => {
+    const { aiClientOptions } = await import('../ai/provider.js')
+    expect(aiClientOptions().maxRetries).toBeLessThanOrEqual(1)
+  })
 })

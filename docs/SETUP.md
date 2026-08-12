@@ -189,6 +189,9 @@ If both old and new MCPs are active, you'll get duplicate tool names and unpredi
 | `SHADE_BACKEND` | No | `webgl2` | Default backend (`webgl2` or `webgpu`) |
 | `SHADE_MAX_BROWSERS` | No | `1` | Concurrent browser sessions |
 | `SHADE_HEADLESS` | No | `1` (headless) | Set to `0` to watch the browser window |
+| `SHADE_TIMEOUT_MS` | No | `300000` | Ceiling for every browser and page operation |
+| `SHADE_AI_TIMEOUT_MS` | No | `120000` | Ceiling for a single AI provider request |
+| `SHADE_AI_MODEL` | No | provider default | Model used by the AI-powered tools |
 | `ANTHROPIC_API_KEY` | No | — | For AI-powered tools |
 | `OPENAI_API_KEY` | No | — | Fallback AI provider |
 

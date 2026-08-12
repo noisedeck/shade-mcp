@@ -6,7 +6,6 @@ import { getConfig } from '../../config.js'
 import { resolveEffectIds } from '../resolve-effects.js'
 import { toolResult } from '../tool-result.js'
 
-const STATUS_TIMEOUT = 300000
 
 export const compileEffectSchema = {
   effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
@@ -60,7 +59,7 @@ export async function compileEffect(
         }
         poll()
       })
-    }, { timeout: STATUS_TIMEOUT, globals: session.globals })
+    }, { timeout: session.timeoutMs, globals: session.globals })
 
     return { ...result, backend: session.backend }
   })
