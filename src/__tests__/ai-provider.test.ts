@@ -35,6 +35,20 @@ describe('getAIProvider', () => {
     expect(provider?.provider).toBe('anthropic')
   })
 
+  it('defaults to undated model ids', async () => {
+    // Current model ids are complete as written; a trailing date pins a
+    // snapshot that ages out and silently keeps serving an old model.
+    const dated = /-\d{8}$/
+    const { getAIProvider } = await import('../ai/provider.js')
+
+    vi.stubEnv('ANTHROPIC_API_KEY', 'test-key')
+    expect(getAIProvider({ projectRoot: '/nonexistent' })?.model).not.toMatch(dated)
+
+    vi.unstubAllEnvs()
+    vi.stubEnv('OPENAI_API_KEY', 'test-key')
+    expect(getAIProvider({ projectRoot: '/nonexistent' })?.model).not.toMatch(dated)
+  })
+
   it('honours an explicit model override', async () => {
     vi.stubEnv('ANTHROPIC_API_KEY', 'test-key')
     vi.stubEnv('SHADE_AI_MODEL', 'claude-custom')

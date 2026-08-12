@@ -63,6 +63,14 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- **The default AI models are current-generation and undated**: `claude-sonnet-5`
+  and `gpt-5.2`, replacing `claude-sonnet-4-5-20250929` and `gpt-4o`. The dated
+  Anthropic id pinned a snapshot that ages out silently. Both stay overridable
+  with `SHADE_AI_MODEL`; the Anthropic tier is unchanged, so set the variable to
+  `claude-opus-5` if you want the more capable model for vision and analysis.
+- Dependency advisories resolved — nine of ten, including every high and
+  moderate one, via lockfile updates that leave the declared ranges untouched.
+  One low-severity advisory remains, reachable only through a breaking major.
 - **`describeEffectFrame` no longer returns the rendered image by default.**
   The frame still goes to the vision model; echoing megabytes of base64 back to
   the caller spent context it had not asked for. Pass `capture_image: true` to

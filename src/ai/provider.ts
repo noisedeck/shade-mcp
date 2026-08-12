@@ -4,8 +4,10 @@ import Anthropic from '@anthropic-ai/sdk'
 import OpenAI from 'openai'
 import { getConfig } from '../config.js'
 
-const DEFAULT_ANTHROPIC_MODEL = 'claude-sonnet-4-5-20250929'
-const DEFAULT_OPENAI_MODEL = 'gpt-4o'
+// Current-generation ids, deliberately undated: a dated snapshot goes stale
+// silently. Override either with SHADE_AI_MODEL.
+const DEFAULT_ANTHROPIC_MODEL = 'claude-sonnet-5'
+const DEFAULT_OPENAI_MODEL = 'gpt-5.2'
 
 /**
  * Bounds every provider request. Without a timeout the SDK waits ~10 minutes,
