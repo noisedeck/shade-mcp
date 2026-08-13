@@ -34,7 +34,12 @@ describe('server-manager', () => {
   })
 
   describe('acquireServer with routes', () => {
-    const testPort = 4199
+    // 0 lets the OS assign a free port per acquire. A fixed port made these
+    // tests order-dependent: close() is async, so re-binding the same port
+    // while the previous socket was still tearing down reset the next
+    // connection — which the old traversal test caught and mistook for the
+    // server refusing the request.
+    const testPort = 0
     const tmpDir = resolve('/tmp/shade-mcp-test-viewer')
     const tmpEffects = resolve('/tmp/shade-mcp-test-effects')
 
@@ -123,21 +128,20 @@ describe('server-manager', () => {
       expect(getRefCount()).toBe(0)
     })
 
-    it('rejects path traversal attempts', async () => {
+    it('does not escape the served roots when a client normalizes a traversal', async () => {
       mkdirSync(tmpDir, { recursive: true })
       writeFileSync(resolve(tmpDir, 'index.html'), '')
       mkdirSync(tmpEffects, { recursive: true })
 
       const url = await acquireServer(testPort, tmpDir, tmpEffects)
-      let blocked = false
-      try {
-        const res = await fetch(`${url}/effects/../../etc/passwd`)
-        blocked = res.status === 403
-      } catch {
-        // Server closing connection on invalid path also counts as blocking
-        blocked = true
-      }
-      expect(blocked).toBe(true)
+      // A compliant client collapses the dot segments before sending, so this
+      // arrives as /etc/passwd and resolves inside the viewer root rather than
+      // at the filesystem root. The encoded-slash case below is the one that
+      // actually reaches the containment check.
+      const res = await fetch(`${url}/effects/../../etc/passwd`)
+
+      expect(res.ok).toBe(false)
+      expect(await res.text()).not.toContain('root:')
     })
 
     it('does not send a wildcard CORS header', async () => {
