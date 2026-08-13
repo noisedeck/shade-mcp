@@ -49,7 +49,7 @@ describe('config', () => {
   it('defaults the browser and AI timeouts', async () => {
     const { getConfig } = await import('../config.js')
     const config = getConfig()
-    expect(config.timeoutMs).toBe(300000)
+    expect(config.timeoutMs).toBe(120000)
     expect(config.aiTimeoutMs).toBe(120000)
   })
 
@@ -67,7 +67,7 @@ describe('config', () => {
     vi.stubEnv('SHADE_AI_TIMEOUT_MS', 'soon')
     const { getConfig } = await import('../config.js')
     const config = getConfig()
-    expect(config.timeoutMs).toBe(300000)
+    expect(config.timeoutMs).toBe(120000)
     expect(config.aiTimeoutMs).toBe(120000)
   })
 

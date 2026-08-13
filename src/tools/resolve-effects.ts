@@ -43,8 +43,9 @@ export function resolveEffectIds(
         }
       }
     }
-  } catch {
-    throw new Error(`Failed to scan effects directory: ${effectsDir}`)
+  } catch (err) {
+    // Keep the cause: ENOENT, EACCES and ELOOP need different fixes.
+    throw new Error(`Failed to scan effects directory: ${effectsDir}`, { cause: err })
   }
 
   if (found.length === 0) {

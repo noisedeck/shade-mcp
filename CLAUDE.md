@@ -77,7 +77,7 @@ shade-mcp is configured entirely via env vars. Each consumer project points its 
 | `SHADE_BACKEND` | No | `webgl2` | Default rendering backend |
 | `SHADE_MAX_BROWSERS` | No | `1` | Max concurrent browser sessions (pipelining) |
 | `SHADE_HEADLESS` | No | `1` (headless) | Set `0` to run headed; headless is the only mode that works with no display |
-| `SHADE_TIMEOUT_MS` | No | `300000` | Ceiling for every browser/page operation (`session.timeoutMs`) |
+| `SHADE_TIMEOUT_MS` | No | `120000` | Ceiling for every browser/page operation (`session.timeoutMs`) |
 | `SHADE_AI_TIMEOUT_MS` | No | `120000` | Ceiling for one AI provider request; retries capped at 1 |
 | `SHADE_AI_MODEL` | No | provider default | Overrides the model for AI-powered tools |
 

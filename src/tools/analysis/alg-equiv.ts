@@ -63,7 +63,10 @@ export async function checkAlgEquiv(effectId: string): Promise<any> {
       ? join(effectDir, 'definition.json')
       : join(effectDir, 'definition.js')
     defContext = readFileSync(defPath, 'utf-8').slice(0, 1000)
-  } catch {}
+  } catch (err) {
+    // Not fatal — the model just analyzes without definition context.
+    console.warn(`[shade-mcp] no definition context for ${effectId}: ${err instanceof Error ? err.message : String(err)}`)
+  }
 
   // Compare each pair
   const results = []
@@ -73,7 +76,7 @@ export async function checkAlgEquiv(effectId: string): Promise<any> {
       userContent: [
         { type: 'text', text: `Effect definition context:\n${defContext}\n\nGLSL (${pair.program}.glsl):\n${pair.glsl}\n\nWGSL (${pair.program}.wgsl):\n${pair.wgsl}\n\nAre these algorithmically equivalent?` }
       ],
-      maxTokens: 500,
+      maxTokens: 1500,
       jsonMode: true,
       ai,
     })

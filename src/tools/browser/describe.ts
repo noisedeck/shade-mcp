@@ -38,7 +38,7 @@ export async function describeEffectFrame(
       { type: 'text', text: prompt },
       { type: 'image_url', image_url: { url: renderResult.frame.image_uri } }
     ],
-    maxTokens: 500,
+    maxTokens: 1500,
     jsonMode: true,
     ai,
   })

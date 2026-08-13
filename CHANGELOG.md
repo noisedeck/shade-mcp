@@ -63,11 +63,18 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
-- **The default AI models are current-generation and undated**: `claude-sonnet-5`
+- **The default AI models are current-generation and undated**: `claude-opus-5`
   and `gpt-5.2`, replacing `claude-sonnet-4-5-20250929` and `gpt-4o`. The dated
-  Anthropic id pinned a snapshot that ages out silently. Both stay overridable
-  with `SHADE_AI_MODEL`; the Anthropic tier is unchanged, so set the variable to
-  `claude-opus-5` if you want the more capable model for vision and analysis.
+  id pinned a snapshot that ages out silently. Both remain overridable with
+  `SHADE_AI_MODEL` — set it to `claude-sonnet-5` for a cheaper default.
+- **AI replies are no longer capped at 500 tokens.** Every AI-backed tool asks
+  for JSON, and that ceiling truncated the reply mid-object; the parse then
+  failed and the caller silently received the fallback shape instead of an
+  analysis. The default is 2000, with the vision and comparison tools at 1500
+  and the branching analysis at 3000.
+- **`SHADE_TIMEOUT_MS` defaults to two minutes rather than five.** Five minutes
+  is indistinguishable from a hang in an agent loop; raise it with the variable
+  if a legitimately slow compile needs the headroom.
 - Dependency advisories resolved — nine of ten, including every high and
   moderate one, via lockfile updates that leave the declared ranges untouched.
   One low-severity advisory remains, reachable only through a breaking major.

@@ -45,7 +45,7 @@ export function getConfig(): Config {
     globalsPrefix: process.env.SHADE_GLOBALS_PREFIX || undefined,
     viewerPath: process.env.SHADE_VIEWER_PATH || undefined,
     maxBrowsers: parseCount(process.env.SHADE_MAX_BROWSERS, 1),
-    timeoutMs: parseDuration(process.env.SHADE_TIMEOUT_MS, 300000),
+    timeoutMs: parseDuration(process.env.SHADE_TIMEOUT_MS, 120000),
     aiTimeoutMs: parseDuration(process.env.SHADE_AI_TIMEOUT_MS, 120000),
     aiModel: process.env.SHADE_AI_MODEL || undefined,
   }

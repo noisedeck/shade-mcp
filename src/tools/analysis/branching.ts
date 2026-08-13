@@ -43,7 +43,10 @@ export async function analyzeBranching(effectId: string, backend: string): Promi
       ? join(effectDir, 'definition.json')
       : join(effectDir, 'definition.js')
     defContext = readFileSync(defPath, 'utf-8').slice(0, 1000)
-  } catch {}
+  } catch (err) {
+    // Not fatal — the model just analyzes without definition context.
+    console.warn(`[shade-mcp] no definition context for ${effectId}: ${err instanceof Error ? err.message : String(err)}`)
+  }
 
   const shaderText = sources.map(s => `--- ${s.file} ---\n${s.source}`).join('\n\n')
 
@@ -52,7 +55,7 @@ export async function analyzeBranching(effectId: string, backend: string): Promi
     userContent: [
       { type: 'text', text: `Effect definition:\n${defContext}\n\nShader sources:\n${shaderText}\n\nIdentify unnecessary branching.` }
     ],
-    maxTokens: 1000,
+    maxTokens: 3000,
     jsonMode: true,
     ai,
   })

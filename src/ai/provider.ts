@@ -6,8 +6,13 @@ import { getConfig } from '../config.js'
 
 // Current-generation ids, deliberately undated: a dated snapshot goes stale
 // silently. Override either with SHADE_AI_MODEL.
-const DEFAULT_ANTHROPIC_MODEL = 'claude-sonnet-5'
+const DEFAULT_ANTHROPIC_MODEL = 'claude-opus-5'
 const DEFAULT_OPENAI_MODEL = 'gpt-5.2'
+
+// Every AI-backed tool asks for JSON. A cap this low truncates the reply
+// mid-object, JSON.parse fails, and the caller silently gets the fallback
+// shape instead of an analysis — so the ceiling is generous rather than tight.
+const DEFAULT_MAX_TOKENS = 2000
 
 /**
  * Bounds every provider request. Without a timeout the SDK waits ~10 minutes,
@@ -95,7 +100,7 @@ async function callAnthropic(options: CallAIOptions): Promise<string | null> {
 
   const response = await client.messages.create({
     model: options.ai.model,
-    max_tokens: options.maxTokens || 500,
+    max_tokens: options.maxTokens || DEFAULT_MAX_TOKENS,
     system,
     messages: [{ role: 'user', content }]
   })
@@ -119,7 +124,7 @@ async function callOpenAI(options: CallAIOptions): Promise<string | null> {
 
   const response = await client.chat.completions.create({
     model: options.ai.model,
-    max_tokens: options.maxTokens || 500,
+    max_tokens: options.maxTokens || DEFAULT_MAX_TOKENS,
     messages,
     ...(options.jsonMode ? { response_format: { type: 'json_object' as const } } : {})
   })

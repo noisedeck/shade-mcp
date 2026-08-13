@@ -25,8 +25,10 @@ export class EffectIndex {
           const def = loadEffectDefinition(effectDir)
           const id = `${ns}/${effect}`
           this.effects.set(id, { ...def, namespace: ns })
-        } catch {
-          // Skip effects that can't be parsed
+        } catch (err) {
+          // An effect that will not parse is invisible to every search and
+          // listing, so say which one rather than dropping it silently.
+          console.warn(`[shade-mcp] skipping unparseable effect ${ns}/${effect}: ${err instanceof Error ? err.message : String(err)}`)
         }
       }
     }

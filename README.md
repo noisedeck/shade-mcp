@@ -50,7 +50,7 @@ Environment variables:
 | `SHADE_BACKEND` | `webgl2` | Default rendering backend (`webgl2` or `webgpu`) |
 | `SHADE_MAX_BROWSERS` | `1` | Concurrent browser sessions |
 | `SHADE_HEADLESS` | `1` (headless) | Set to `0` to watch the browser window |
-| `SHADE_TIMEOUT_MS` | `300000` | Ceiling for every browser and page operation |
+| `SHADE_TIMEOUT_MS` | `120000` | Ceiling for every browser and page operation |
 | `SHADE_AI_TIMEOUT_MS` | `120000` | Ceiling for a single AI provider request |
 | `SHADE_AI_MODEL` | provider default | Model used by the AI-powered tools |
 | `ANTHROPIC_API_KEY` | — | Required for AI-powered tools (vision, analysis) |
