@@ -48,3 +48,45 @@ jobs:
 
       - name: Unit tests
         run: npm test
+
+  # The unit suite mocks Playwright, so it cannot tell whether the browser
+  # tools actually work — a wrong viewer root made every one of them time out
+  # while the whole suite stayed green. This drives the built server against a
+  # real viewer instead.
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      # noisemaker supplies the viewer page and the effects library. It is
+      # public, so no token is needed, and everything the page imports is
+      # tracked — a plain checkout is enough.
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          repository: noisefactorllc/noisemaker
+          path: noisemaker
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      # Scripts run here, unlike the job above: prepare builds dist/, and the
+      # smoke test drives the built server.
+      - name: Install and build
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser tools smoke test
+        env:
+          NOISEMAKER: ${{ github.workspace }}/noisemaker
+          # Runners have no GPU, so Chromium needs its software rasterizer.
+          SHADE_SWIFTSHADER: '1'
+        run: node scripts/browser-smoke.mjs

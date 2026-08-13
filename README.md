@@ -4,7 +4,7 @@ MCP server for shader effect development.
 
 Distilled from three projects:
 - **[noisemaker](https://noisemaker.app/)** — browser-based shader testing
-- **[portable](https://github.com/noisedeck/portable)** — portable effect authoring
+- **[portable](https://github.com/noisefactorllc/portable)** — portable effect authoring
 - **[shade](https://shade.noisedeck.app)** — agent-assisted shader editing
 
 ## Requirements

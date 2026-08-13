@@ -3,7 +3,7 @@
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] — 2026-08-13
 
 ### Security
 
@@ -60,6 +60,13 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Tool failures carry `isError`, so a caller can tell a failed call from a
   successful one that found nothing.
 - `npm run typecheck`, which also covers the `tests/` directory.
+- A browser smoke test (`scripts/browser-smoke.mjs`) drives the built server
+  against a real viewer in CI. The unit suite mocks Playwright, so it cannot
+  tell whether the browser tools work at all — a wrong viewer root made every
+  one of them time out while the suite stayed green.
+- `SHADE_SWIFTSHADER=1` enables Chromium's software rasterizer for machines
+  with no GPU. It is opt-in: forcing it where a real GPU exists would quietly
+  change what every render and parity comparison produces.
 
 ### Changed
 
@@ -75,9 +82,10 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - **`SHADE_TIMEOUT_MS` defaults to two minutes rather than five.** Five minutes
   is indistinguishable from a hang in an agent loop; raise it with the variable
   if a legitimately slow compile needs the headroom.
-- Dependency advisories resolved — nine of ten, including every high and
-  moderate one, via lockfile updates that leave the declared ranges untouched.
-  One low-severity advisory remains, reachable only through a breaking major.
+- Every dependency advisory is resolved and `npm audit` reports nothing. Nine
+  of the ten came out through lockfile updates that leave the declared ranges
+  untouched; the last needed an override pinning esbuild past the affected
+  range, since tsup's own range stops one release short of the fix.
 - **`describeEffectFrame` no longer returns the rendered image by default.**
   The frame still goes to the vision model; echoing megabytes of base64 back to
   the caller spent context it had not asked for. Pass `capture_image: true` to

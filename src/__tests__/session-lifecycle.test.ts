@@ -91,6 +91,23 @@ describe('browser session lifecycle', () => {
     vi.unstubAllEnvs()
   })
 
+  it('does not use the software rasterizer unless asked', async () => {
+    const session = makeSession()
+    await expect(session.setup()).rejects.toThrow('launch failed')
+    const args = vi.mocked(chromium.launch).mock.calls.at(-1)?.[0]?.args ?? []
+    expect(args).not.toContain('--enable-unsafe-swiftshader')
+  })
+
+  it('enables the software rasterizer when SHADE_SWIFTSHADER is set', async () => {
+    // GPU-less machines (CI runners) have no hardware GL driver at all.
+    vi.stubEnv('SHADE_SWIFTSHADER', '1')
+    const session = makeSession()
+    await expect(session.setup()).rejects.toThrow('launch failed')
+    const args = vi.mocked(chromium.launch).mock.calls.at(-1)?.[0]?.args ?? []
+    expect(args).toContain('--enable-unsafe-swiftshader')
+    vi.unstubAllEnvs()
+  })
+
   it('teardown on a session that was never set up releases nothing', async () => {
     // Stand in for a concurrent session holding the only slot and the server.
     await acquireBrowserSlot()

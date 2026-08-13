@@ -1,6 +1,6 @@
 {
   "name": "shade-mcp",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "MCP server for shader effect development",
   "type": "module",
   "license": "MIT",
@@ -83,5 +83,8 @@
     "tsup": "^8.0.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "esbuild": "^0.28.2"
   }
 }

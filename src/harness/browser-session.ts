@@ -29,6 +29,14 @@ function getBrowserLaunchOptions(headless: boolean, backend: Backend) {
     }
   }
 
+  // A GPU-less machine — a CI runner, a container — has no hardware GL driver,
+  // so context creation fails outright. Chromium's software rasterizer covers
+  // that, but it is opt-in: forcing it where a real GPU exists would quietly
+  // change what every render and parity comparison produces.
+  if (process.env.SHADE_SWIFTSHADER === '1' || process.env.SHADE_SWIFTSHADER === 'true') {
+    args.push('--enable-unsafe-swiftshader')
+  }
+
   return { headless, args }
 }
 
