@@ -155,6 +155,46 @@ describe('server-manager', () => {
       expect(res.headers.get('access-control-allow-origin')).toBeNull()
     })
 
+    // Consumers load the renderer as an ES module from a page built with
+    // page.setContent(), whose origin is the string "null". Refusing that
+    // origin is indistinguishable from the server being down: the import
+    // fails, the renderer global never appears, and the caller waits out its
+    // timeout. noisemaker's whole shader suite works this way.
+    it('answers an opaque origin so setContent pages can import modules', async () => {
+      mkdirSync(tmpDir, { recursive: true })
+      writeFileSync(resolve(tmpDir, 'index.html'), '<h1>test</h1>')
+      mkdirSync(tmpEffects, { recursive: true })
+
+      const url = await acquireServer(testPort, tmpDir, tmpEffects)
+      const res = await fetch(`${url}/index.html`, { headers: { Origin: 'null' } })
+      expect(res.ok).toBe(true)
+      expect(res.headers.get('access-control-allow-origin')).toBe('null')
+    })
+
+    it('answers a loopback origin with that same origin', async () => {
+      mkdirSync(tmpDir, { recursive: true })
+      writeFileSync(resolve(tmpDir, 'index.html'), '<h1>test</h1>')
+      mkdirSync(tmpEffects, { recursive: true })
+
+      const url = await acquireServer(testPort, tmpDir, tmpEffects)
+      const res = await fetch(`${url}/index.html`, { headers: { Origin: 'http://localhost:5173' } })
+      expect(res.ok).toBe(true)
+      expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:5173')
+    })
+
+    it('refuses a remote origin the response', async () => {
+      mkdirSync(tmpDir, { recursive: true })
+      writeFileSync(resolve(tmpDir, 'index.html'), '<h1>test</h1>')
+      mkdirSync(tmpEffects, { recursive: true })
+
+      const url = await acquireServer(testPort, tmpDir, tmpEffects)
+      const res = await fetch(`${url}/index.html`, { headers: { Origin: 'https://evil.example' } })
+      // The body still goes over the wire — this is a plain file server, not an
+      // authenticated one — but with no matching header the browser will not
+      // hand it to the page that asked.
+      expect(res.headers.get('access-control-allow-origin')).toBeNull()
+    })
+
     it('survives malformed percent-encoding in the URL', async () => {
       mkdirSync(tmpDir, { recursive: true })
       writeFileSync(resolve(tmpDir, 'index.html'), '<h1>test</h1>')

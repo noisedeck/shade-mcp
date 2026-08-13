@@ -69,7 +69,30 @@ function safePath(root: string, relPath: string): string | null {
   return resolved
 }
 
-function serveFile(filePath: string, res: ServerResponse): void {
+const LOOPBACK_ORIGIN = /^https?:\/\/(127\.0\.0\.1|\[::1\]|localhost)(:\d+)?$/
+
+// Which Origin, if any, this server will answer cross-origin.
+//
+// Consumers drive the viewer from pages built with page.setContent(), which
+// have an opaque origin, so importing /shaders/src/index.js as an ES module is
+// a cross-origin request that needs CORS. 0.2.0 dropped the blanket
+// `Access-Control-Allow-Origin: *` — any page open in the user's browser could
+// read whatever the viewer root exposed — and took noisemaker's shader tests
+// down with it, because every one of them loads the renderer exactly that way.
+//
+// Echoing only opaque and loopback origins keeps both properties: a page at
+// https://evil.example still gets no header, so the browser refuses it the
+// response, while setContent pages and the viewer's own pages work. The
+// wildcard is not needed for either. What actually kept `.anthropic` and
+// `.openai` unreadable is the dotfile refusal in safePath, which stands.
+function allowedOrigin(req: IncomingMessage): string | null {
+  const origin = req.headers.origin
+  if (typeof origin !== 'string') return null
+  if (origin === 'null') return 'null'
+  return LOOPBACK_ORIGIN.test(origin) ? origin : null
+}
+
+function serveFile(filePath: string, res: ServerResponse, corsOrigin: string | null): void {
   const ext = extname(filePath).toLowerCase()
   const mime = MIME_TYPES[ext] || 'application/octet-stream'
   const stream = createReadStream(filePath)
@@ -81,10 +104,13 @@ function serveFile(filePath: string, res: ServerResponse): void {
     res.end()
   })
   stream.on('open', () => {
-    res.writeHead(200, {
+    const headers: Record<string, string> = {
       'Content-Type': mime,
       'Cache-Control': 'no-store',
-    })
+      Vary: 'Origin',
+    }
+    if (corsOrigin) headers['Access-Control-Allow-Origin'] = corsOrigin
+    res.writeHead(200, headers)
     stream.pipe(res)
   })
 }
@@ -108,6 +134,7 @@ export async function acquireServer(
   const flatEffectName = isFlatLayout ? basename(effectsDir) : null
 
   const route = (req: IncomingMessage, res: ServerResponse): void => {
+    const corsOrigin = allowedOrigin(req)
     let url: string
     try {
       const parsedUrl = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`)
@@ -129,7 +156,7 @@ export async function acquireServer(
         const innerPath = relPath.slice(flatEffectName.length + 1)
         const filePath = safePath(effectsDir, innerPath)
         if (!filePath) { res.writeHead(403); res.end('Forbidden'); return }
-        serveFile(filePath, res)
+        serveFile(filePath, res, corsOrigin)
         return
       }
 
@@ -140,7 +167,7 @@ export async function acquireServer(
         res.end('Forbidden')
         return
       }
-      serveFile(filePath, res)
+      serveFile(filePath, res, corsOrigin)
       return
     }
 
@@ -156,7 +183,7 @@ export async function acquireServer(
       res.end('Forbidden')
       return
     }
-    serveFile(filePath, res)
+    serveFile(filePath, res, corsOrigin)
   }
 
   httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {

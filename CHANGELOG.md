@@ -3,6 +3,40 @@
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] — 2026-08-13
+
+Both fixes here are 0.2.0 regressions in the same blind spot: noisemaker and
+portable consume this package as a vendored file drop and drive it from a page
+built with `page.setContent()`, and nothing in CI exercised either of those.
+0.2.0 broke both, and noisemaker's shader test run — the gate on publishing
+`shaders.noisedeck.app` — went red.
+
+### Fixed
+
+- The vendored dist is self-contained again. Declaring `zod` a direct
+  dependency in 0.2.0 made tsup leave it external, so `dist/harness/index.js`
+  shipped `import { z } from "zod"` — an unresolvable specifier for consumers
+  that copy the dist and never install this package. It is bundled again;
+  `playwright`, `openai` and `@anthropic-ai/sdk` stay external because the
+  consumers really do supply those.
+- The viewer server answers cross-origin requests from opaque (`null`) and
+  loopback origins. 0.2.0 removed `Access-Control-Allow-Origin: *` outright,
+  which also refused the `setContent` pages every consumer uses to import the
+  renderer as an ES module — indistinguishable from the server being down, and
+  it hung their suites on a timeout. A page at a remote origin still gets no
+  header. The dotfile refusal, which is what actually keeps `.anthropic` and
+  `.openai` unreadable, is unchanged.
+
+### Added
+
+- `npm run check:dist` asserts what each built entry point may import: nothing
+  outside the declared dependencies, and for the vendored entries nothing the
+  consumers do not already have. It runs on every build. The zod break would
+  have failed it.
+- The browser smoke test now also loads the renderer through the consumer
+  pattern — `setContent`, then a cross-origin ES module import — instead of
+  only calling tools over stdio.
+
 ## [0.2.0] — 2026-08-13
 
 ### Security

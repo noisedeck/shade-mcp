@@ -15,6 +15,20 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   splitting: false,
+  // noisemaker and portable vendor dist/harness, dist/ai and dist/analysis as
+  // a plain file drop and import them directly — no npm install of this
+  // package, so nothing resolves shade-mcp's own dependencies. tsup leaves
+  // anything listed in `dependencies` as a bare import, which means declaring
+  // zod as a direct dependency in 0.2.0 silently turned `import { z } from
+  // "zod"` into an unresolvable specifier for both of them and broke
+  // noisemaker's shader test run. Bundling it keeps the drop self-contained.
+  //
+  // playwright, openai and @anthropic-ai/sdk stay external on purpose: they
+  // are large, and the consumers already supply them (noisemaker has
+  // playwright, and it defers the two AI SDKs behind a dynamic import so a
+  // run without AI keys never reaches them). scripts/check-dist-externals.mjs
+  // holds that contract.
+  noExternal: ['zod'],
   // Declarations are emitted by `tsc --emitDeclarationOnly`, not by tsup.
   //
   // tsup generates .d.ts via rollup-plugin-dts, which imports the TypeScript

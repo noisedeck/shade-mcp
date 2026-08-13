@@ -80,9 +80,45 @@ for (const [name, args] of checks) {
 }
 
 server.kill()
+
+// The consumer pattern, which the MCP tools above do not exercise.
+//
+// noisemaker and portable do not call tools over stdio — they import
+// dist/harness directly, build their own page with page.setContent(), and
+// import the renderer from the harness server as an ES module. A setContent
+// page's origin is the string "null", so that import is a cross-origin
+// request. Dropping the server's CORS header in 0.2.0 made every one of their
+// tests hang on a renderer global that never appeared, while shade-mcp's own
+// suite stayed green.
+const { acquireServer, releaseServer } = await import('../dist/harness/index.js')
+const { chromium } = await import('playwright')
+
+let consumerOk = false
+const baseUrl = await acquireServer(0, NM, `${NM}/shaders/effects`)
+const browser = await chromium.launch({ headless: true })
+try {
+  const page = await browser.newPage()
+  await page.setContent(
+    `<canvas id="canvas"></canvas><script type="module">
+       import { CanvasRenderer } from '${baseUrl}/shaders/src/index.js'
+       window.__consumerLoaded = typeof CanvasRenderer === 'function'
+     </script>`,
+    { waitUntil: 'load' },
+  )
+  await page.waitForFunction(() => window.__consumerLoaded === true, null, { timeout: 30000 })
+  consumerOk = true
+} catch (err) {
+  console.log(`browser-smoke: FAIL module import from a setContent page — ${String(err).split('\n')[0]}`)
+} finally {
+  await browser.close()
+  await releaseServer()
+}
+if (!consumerOk) failed++
+else console.log('browser-smoke: PASS module import from a setContent page')
+
 if (failed) {
-  console.error(`browser-smoke: ${failed} of ${checks.length} browser tools failed`)
+  console.error(`browser-smoke: ${failed} check(s) failed`)
   process.exit(1)
 }
-console.log(`browser-smoke: all ${checks.length} browser tools OK`)
+console.log(`browser-smoke: all ${checks.length + 1} checks OK`)
 process.exit(0)
