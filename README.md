@@ -28,10 +28,15 @@ the renderer. shade-mcp does not ship one: point `SHADE_VIEWER_ROOT` at a
 directory containing an `index.html` that exposes the renderer as window
 globals, and set `SHADE_GLOBALS_PREFIX` to match them.
 
-| Project | `SHADE_VIEWER_ROOT` | `SHADE_GLOBALS_PREFIX` |
-|---------|---------------------|------------------------|
-| noisemaker | `<noisemaker>/demo/shaders` | `__noisemaker` |
-| portable | `<portable>/viewer` | `__portable` |
+| Project | `SHADE_VIEWER_ROOT` | `SHADE_VIEWER_PATH` | `SHADE_GLOBALS_PREFIX` |
+|---------|---------------------|---------------------|------------------------|
+| noisemaker | `<noisemaker>` | `/demo/shaders/` | `__noisemaker` |
+| portable | `<portable>/viewer` | *(default `/`)* | `__portable` |
+
+noisemaker's viewer page lives at `demo/shaders/` but imports the engine from
+`shaders/src/` at the repository root, so the root is what has to be served —
+point `SHADE_VIEWER_ROOT` at the page's own directory and every module 404s.
+Dotfiles stay refused wherever the root is set.
 
 The analysis, knowledge, and utility tools read from disk and need no viewer.
 

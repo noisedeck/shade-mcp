@@ -93,6 +93,13 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Published packages contain only `dist/`, README and LICENSE.
 - Documentation records the viewer requirement, the full environment variable
   set, and their real defaults.
+- **The documented noisemaker viewer configuration was wrong and is fixed.**
+  `SHADE_VIEWER_ROOT` has to be the repository root with `SHADE_VIEWER_PATH`
+  set to `/demo/shaders/`; the page lives there but imports the engine from
+  `shaders/src/` at the top level, so serving only the page's directory made
+  every module request 404 and the renderer global never appeared. Following
+  the old instructions, every browser tool timed out. Verified by driving the
+  real tools against noisemaker: compile and render now finish in seconds.
 
 ## [0.1.4] — 2026-06-15
 

@@ -33,6 +33,10 @@ tools read from disk and work without a viewer.
 
 Effects live at `noisemaker/shaders/effects/` in nested `namespace/effect/` layout, and the demo viewer at `noisemaker/demo/shaders/`.
 
+The viewer *root* is the repository root, not `demo/shaders/`: the page imports
+the engine from `shaders/src/` at the top level, so serving only the page's own
+directory makes every module request 404 and the renderer global never appears.
+
 ### VS Code (Copilot)
 
 Create or edit `noisemaker/.vscode/mcp.json`:
@@ -47,7 +51,8 @@ Create or edit `noisemaker/.vscode/mcp.json`:
       "env": {
         "SHADE_EFFECTS_DIR": "/path/to/noisemaker/shaders/effects",
         "SHADE_PROJECT_ROOT": "/path/to/noisemaker",
-        "SHADE_VIEWER_ROOT": "/path/to/noisemaker/demo/shaders",
+        "SHADE_VIEWER_ROOT": "/path/to/noisemaker",
+        "SHADE_VIEWER_PATH": "/demo/shaders/",
         "SHADE_GLOBALS_PREFIX": "__noisemaker"
       }
     }
@@ -70,7 +75,8 @@ Add to `~/.claude/settings.json` (or project-level `.claude/settings.local.json`
       "env": {
         "SHADE_EFFECTS_DIR": "/path/to/noisemaker/shaders/effects",
         "SHADE_PROJECT_ROOT": "/path/to/noisemaker",
-        "SHADE_VIEWER_ROOT": "/path/to/noisemaker/demo/shaders",
+        "SHADE_VIEWER_ROOT": "/path/to/noisemaker",
+        "SHADE_VIEWER_PATH": "/demo/shaders/",
         "SHADE_GLOBALS_PREFIX": "__noisemaker"
       }
     }
