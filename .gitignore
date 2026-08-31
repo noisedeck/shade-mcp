@@ -4,3 +4,6 @@ dist/
 .env
 .anthropic
 .openai
+
+# staging dir for scripts/check-dist-selfcontained.mjs
+.dist-selfcheck/

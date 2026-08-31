@@ -1,4 +1,7 @@
 import { defineConfig } from 'tsup'
+import { createRequire } from 'node:module'
+
+const { version } = createRequire(import.meta.url)('./package.json') as { version: string }
 
 export default defineConfig({
   entry: {
@@ -44,4 +47,7 @@ export default defineConfig({
   // tsup's JS output goes through esbuild and needs no TypeScript API, so it
   // works fine on 7.x. See the `build` script for the declaration step.
   dts: false,
+  // src/version.ts reads this instead of the file, so the drop carries its
+  // own version and reaches for nothing above dist/.
+  define: { __SHADE_VERSION__: JSON.stringify(version) },
 })
