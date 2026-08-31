@@ -3,6 +3,38 @@
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] — 2026-08-31
+
+The third 0.2.x regression in the same blind spot: this package is also
+consumed as a bare file drop, and nothing in CI ran the shipped files that
+way. 0.2.0 broke portable's MCP server outright and no test noticed for
+seventeen days.
+
+### Fixed
+
+- **The advertised version no longer reads a file that the drop does not
+  ship.** 0.2.0 began reading the MCP handshake version from
+  `../package.json` at runtime. That resolves in this repo and under npm
+  (`files: ["dist"]` puts package.json beside `dist/`), so every test stayed
+  green. The release tarball is `tar -C dist .` — the contents of `dist`,
+  with nothing above them — so portable, which vendors that flat into
+  `vendor/shade-mcp/` and launches `vendor/shade-mcp/index.js` as its MCP
+  server, looked for a `vendor/package.json` the tarball cannot supply. Its
+  shade server threw `Cannot find module '../package.json'` at import on
+  every start from v0.2.1 (2026-08-14). noisemaker was untouched: it runs the
+  server via `npx github:` and vendors no `index.js`. The version is now
+  substituted at build time from package.json, which stays the single source,
+  so the drift fixed in 0.2.0 stays fixed.
+
+### Added
+
+- `scripts/check-dist-selfcontained.mjs`, run from `postbuild` beside
+  `check:dist`. `check-dist-externals` covers what the dist *imports*; a reach
+  through `createRequire` is the same contract violation and a scan for bare
+  specifiers cannot see it. The new check runs the built entry the way a
+  vendoring consumer does — staged with no package.json above it — and
+  asserts it completes an MCP handshake advertising the right version.
+
 ## [0.2.1] — 2026-08-13
 
 Both fixes here are 0.2.0 regressions in the same blind spot: noisemaker and
