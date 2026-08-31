@@ -36,6 +36,19 @@ jobs:
       - name: Create tarball
         run: tar -czf shade-mcp-dist.tar.gz -C dist .
 
+      # `npm run build` already ran this against dist/. Running it again on the
+      # unpacked tarball covers the step in between: `tar -C dist .` is what
+      # decides the shape consumers receive, and portable extracts it flat and
+      # runs index.js straight out of it. Verifying here rather than after
+      # publishing means a drop that cannot start never becomes a release —
+      # and since trigger-downstream.yml waits on the asset before dispatching,
+      # no consumer can be handed a broken one.
+      - name: Smoke-test the tarball as a vendored drop
+        run: |
+          rm -rf /tmp/drop && mkdir -p /tmp/drop
+          tar -xzf shade-mcp-dist.tar.gz -C /tmp/drop
+          node scripts/check-dist-selfcontained.mjs /tmp/drop
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:

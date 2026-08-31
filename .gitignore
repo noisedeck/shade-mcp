@@ -5,5 +5,8 @@ dist/
 .anthropic
 .openai
 
+# release artifact, built in CI and by a local smoke-test run
+shade-mcp-dist.tar.gz
+
 # staging dir for scripts/check-dist-selfcontained.mjs
 .dist-selfcheck/

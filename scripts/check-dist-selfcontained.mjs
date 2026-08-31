@@ -18,25 +18,38 @@
 // resolves them from its own, while `../package.json` is absent — which is the
 // shape of a real vendor drop.
 //
-// Run after `npm run build`.
+// Takes an optional source directory, so the same check covers both ends of
+// the pipeline: `dist/` after a build, and the extracted release tarball
+// before it is published. The tarball is the artifact consumers actually
+// receive, and `tar -C dist .` is a separate step from the build that nothing
+// was verifying.
+//
+// Usage:
+//   node scripts/check-dist-selfcontained.mjs            # checks dist/
+//   node scripts/check-dist-selfcontained.mjs <dir>      # checks an extracted drop
 import { cpSync, rmSync, mkdirSync, existsSync, readFileSync } from 'node:fs'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
+const source = process.argv[2] ? resolve(process.argv[2]) : join(root, 'dist')
+const label = process.argv[2] ? source : 'dist'
 const stage = join(root, '.dist-selfcheck')
 const drop = join(stage, 'shade-mcp')
 
-if (!existsSync(join(root, 'dist', 'index.js'))) {
-  console.error('check-dist-selfcontained: dist/index.js is missing — run npm run build first')
+if (!existsSync(join(source, 'index.js'))) {
+  console.error(`check-dist-selfcontained: ${label}/index.js is missing — build first, or point at an extracted drop`)
   process.exit(2)
 }
 
+// Staged under the repo even when the source is elsewhere: node must still
+// walk up to a node_modules for the declared externals, the way a consumer
+// resolves them from its own.
 rmSync(stage, { recursive: true, force: true })
 mkdirSync(stage, { recursive: true })
-cpSync(join(root, 'dist'), drop, { recursive: true })
+cpSync(source, drop, { recursive: true })
 
 const request = JSON.stringify({
   jsonrpc: '2.0',
@@ -93,4 +106,4 @@ if (version !== pkg.version) {
   process.exit(1)
 }
 
-console.log(`check-dist-selfcontained: ok dist runs as a bare file drop and advertises ${version}`)
+console.log(`check-dist-selfcontained: ok ${label} runs as a bare file drop and advertises ${version}`)
