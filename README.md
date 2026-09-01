@@ -1,3 +1,8 @@
+<!-- repo-hero -->
+<a href="https://shade.noisedeck.app/"><img src="docs/hero.jpg" alt="Shade MCP MCP dev tools for Noisemaker and Portable effects" width="100%"></a>
+
+<sub>Open source from <a href="https://noisefactor.io">Noise Factor</a> &middot; <a href="https://github.com/noisefactorllc">more projects</a></sub>
+
 # shade-mcp
 
 MCP server for shader effect development.
