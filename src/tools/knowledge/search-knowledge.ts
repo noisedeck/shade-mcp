@@ -24,7 +24,7 @@ export const searchShaderKnowledgeSchema = {
 export function registerSearchShaderKnowledge(server: McpServer): void {
   server.tool(
     'searchShaderKnowledge',
-    'Semantic search over curated shader documentation: DSL grammar, GLSL techniques, effect patterns, common errors.',
+    'Search curated shader documentation by meaning: DSL grammar, GLSL techniques, effect patterns, and common errors.',
     searchShaderKnowledgeSchema,
     async (args: any) => {
       const database = getDB()

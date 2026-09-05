@@ -7,14 +7,14 @@ import { resolveEffectIds } from '../resolve-effects.js'
 import { toolResult } from '../tool-result.js'
 
 export const renderEffectFrameSchema = {
-  effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
-  effects: z.string().optional().describe('CSV of effect IDs'),
+  effect_id: z.string().optional().describe('One effect ID, such as "synth/noise"'),
+  effects: z.string().optional().describe('Comma-separated effect IDs'),
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
   warmup_frames: z.number().optional().default(10).describe('Frames to wait before capture'),
-  capture_image: z.boolean().optional().default(false).describe('Capture PNG data URI'),
-  uniforms: z.record(z.string(), z.number()).optional().describe('Uniform overrides'),
-  time: z.number().optional().describe('Pause and render at specific time value (seconds)'),
-  resolution: z.tuple([z.number(), z.number()]).optional().describe('Viewport resolution [width, height]'),
+  capture_image: z.boolean().optional().default(false).describe('Capture the frame as a PNG data URI'),
+  uniforms: z.record(z.string(), z.number()).optional().describe('Values that override uniforms'),
+  time: z.number().optional().describe('Time in seconds at which to pause and render the frame'),
+  resolution: z.tuple([z.number(), z.number()]).optional().describe('Viewport resolution as [width, height]'),
 }
 
 export async function renderEffectFrame(
@@ -188,7 +188,7 @@ export async function renderEffectFrame(
 export function registerRenderEffectFrame(server: McpServer): void {
   server.tool(
     'renderEffectFrame',
-    'Render single frame, compute image metrics (mean RGB, variance, monochrome/blank detection), optional PNG capture.',
+    'Render one frame. Compute mean RGB, variance, and monochrome/blank detection. Optionally capture a PNG.',
     renderEffectFrameSchema,
     async (args: any) => {
       const config = getConfig()

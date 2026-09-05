@@ -7,9 +7,9 @@ import { toolResult } from '../tool-result.js'
 export const runDslProgramSchema = {
   dsl: z.string().describe('DSL program string'),
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
-  warmup_frames: z.number().optional().default(10).describe('Frames to wait'),
-  capture_image: z.boolean().optional().default(false).describe('Capture PNG data URI'),
-  uniforms: z.record(z.string(), z.number()).optional().describe('Uniform overrides'),
+  warmup_frames: z.number().optional().default(10).describe('Number of frames to wait before measuring output'),
+  capture_image: z.boolean().optional().default(false).describe('Capture the frame as a PNG data URI'),
+  uniforms: z.record(z.string(), z.number()).optional().describe('Values that override uniforms'),
 }
 
 export async function runDslProgram(
@@ -169,7 +169,7 @@ export async function runDslProgram(
 export function registerRunDslProgram(server: McpServer): void {
   server.tool(
     'runDslProgram',
-    'Compile and execute arbitrary DSL code without pre-defined effect files. Returns metrics + pass status.',
+    'Compile arbitrary DSL code without predefined effect files. Execute the program. Return metrics and pass status.',
     runDslProgramSchema,
     async (args: any) => {
       const session = new BrowserSession({ backend: args.backend })

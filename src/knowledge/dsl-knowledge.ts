@@ -31,8 +31,8 @@ compile_dsl({
 })
 \`\`\`
 
-IMPORTANT: "search user" is MANDATORY - your effect is in the USER namespace!
-IMPORTANT: The effect name must EXACTLY match what you used in create_effect!
+"search user" is MANDATORY. Your effect belongs to the USER namespace.
+The effect name must EXACTLY match the name you used in create_effect.
 
 ### STEP 3: validate_effect
 
@@ -42,11 +42,11 @@ Check if the output looks correct.
 
 ### IF YOU SEE "Unknown effect" ERROR
 
-This means ONE of:
-1. You called compile_dsl BEFORE create_effect
-2. create_effect FAILED (check for GLSL errors)
-3. Effect name in DSL doesn't match create_effect name
-4. You forgot "search user" in the DSL
+This error means one of these conditions applies:
+1. You called compile_dsl BEFORE create_effect.
+2. create_effect FAILED. Check for GLSL errors.
+3. The effect name in the DSL does not match the create_effect name.
+4. The DSL does not include "search user".
 
 ### CORRECT DSL PATTERN FOR YOUR EFFECTS
 
@@ -86,8 +86,8 @@ yourCustomEffect (whatever name you gave it)
 
 | Error Code | Meaning | Fix |
 |------------|---------|-----|
-| **S001** | Unknown effect | Did you create_effect first? Is the name exact? Did you use "search user"? |
-| **S005** | Illegal chain | Generator in middle of chain. Generators must be first. |
+| **S001** | Unknown effect | Check that create_effect succeeded first. Check the exact name. Check for "search user". |
+| **S005** | Illegal chain | A generator is in the middle of a chain. Generators must be first. |
 | **S006** | Missing write() | Add \`.write(o0)\` at end of chain |
 
 ### PARAMETER NAMES - USE analyze_effect TO DISCOVER
@@ -113,14 +113,14 @@ Fix: DSL is high-level: \`noise().write(o0)\` not \`vec2 uv = ...\`
  */
 export const DSL_SCAFFOLDING_PATTERNS = `## DSL Scaffolding Patterns
 
-When generating a DSL program, the structure depends on the EFFECT TYPE.
+The DSL program structure depends on the effect type.
 
 ### Effect Type Detection
 
-1. **STARTER?** No input needed (synth/* effects)
-2. **Has tex: param?** Mixer-type, needs two inputs
-3. **3D effect?** Needs render3d() at end
-4. **POINTS effect?** MUST wrap with pointsEmit/pointsRender
+1. **STARTER (synth/*):** The effect needs no input.
+2. **Has a tex: parameter:** The effect is a mixer and needs two inputs.
+3. **3D effect:** The chain needs render3d() at the end.
+4. **POINTS effect:** You MUST wrap the effect with pointsEmit/pointsRender.
 
 ### SCAFFOLDING: Starter (synth/)
 \`\`\`
@@ -172,8 +172,8 @@ myCustomEffect().write(o0)
 render(o0)
 \`\`\`
 
-NOTE: ALL effects created with create_effect go in the 'user' namespace.
-The DSL MUST use 'search user' to find them!
+ALL effects created with create_effect belong to the 'user' namespace.
+The DSL MUST use 'search user' to find these effects.
 
 ### Search Directive by Namespace
 
@@ -188,11 +188,11 @@ The DSL MUST use 'search user' to find them!
 
 ### CRITICAL RULES
 
-1. Points effects ALWAYS get pointsEmit/pointsRender wrapper
-2. 3D effects ALWAYS end with render3d()
-3. Filters ALWAYS chain from a generator (never standalone)
-4. Mixers ALWAYS need tex: read(surface) param
-5. Always use noise() as the default starter (with ridges: true)`
+1. ALWAYS wrap points effects with pointsEmit/pointsRender.
+2. ALWAYS end 3D effect chains with render3d().
+3. ALWAYS chain filters from a generator. Never use filters alone.
+4. ALWAYS supply a tex: read(surface) parameter to mixers.
+5. Always use noise() with ridges: true as the default starter.`
 
 /**
  * DSL Grammar and Semantics Reference
@@ -235,8 +235,8 @@ Structure: \`SearchDirective Statement* RenderDirective\`
 
 ### CRITICAL RULES
 
-1. Namespaces are NOT functions - NEVER call \`synth()\` or \`filter()\`
+1. Namespaces are NOT functions. NEVER call \`synth()\` or \`filter()\`
 2. Every chain MUST end with \`.write(surface)\`
-3. Search directive is MANDATORY first line
-4. render() is MANDATORY last line
-5. Use YOUR effect name from create_effect, not library names`
+3. The search directive is MANDATORY on the first line.
+4. render() is MANDATORY on the last line.
+5. Use YOUR effect name from create_effect instead of a library name.`

@@ -148,7 +148,7 @@ void main() {
     // All wave components use sin/cos with time*TAU
     float v = 0.0;
     v += sin(uv.x * scale + t);
-    v += sin(uv.y * scale + t * 0.5);  // 0.5 is fine inside sin()
+    v += sin(uv.y * scale + t);  // One full time cycle per loop
     v += sin((uv.x + uv.y) * scale * 0.5 + t);
     v += sin(length(uv - 0.5) * scale * 2.0 - t);
 

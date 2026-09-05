@@ -6,8 +6,8 @@ import { resolveEffectIds } from '../resolve-effects.js'
 import { toolResult } from '../tool-result.js'
 
 export const testNoPassthroughSchema = {
-  effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
-  effects: z.string().optional().describe('CSV of effect IDs'),
+  effect_id: z.string().optional().describe('One effect ID, such as "synth/noise"'),
+  effects: z.string().optional().describe('Comma-separated effect IDs'),
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
 }
 
@@ -102,7 +102,7 @@ export async function testNoPassthrough(
 export function registerTestNoPassthrough(server: McpServer): void {
   server.tool(
     'testNoPassthrough',
-    'Verify filter effects actually modify their input (>1% pixel difference).',
+    'Check that filter effects change their input (>1% pixel difference).',
     testNoPassthroughSchema,
     async (args: any) => {
       const config = getConfig()

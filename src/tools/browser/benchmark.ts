@@ -7,12 +7,12 @@ import { resolveEffectIds } from '../resolve-effects.js'
 import { toolResult } from '../tool-result.js'
 
 export const benchmarkEffectFPSSchema = {
-  effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
-  effects: z.string().optional().describe('CSV of effect IDs'),
+  effect_id: z.string().optional().describe('One effect ID, such as "synth/noise"'),
+  effects: z.string().optional().describe('Comma-separated effect IDs'),
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
   target_fps: z.number().optional().default(60).describe('Target FPS'),
   duration_seconds: z.number().optional().default(5).describe('Benchmark duration in seconds'),
-  resolution: z.tuple([z.number(), z.number()]).optional().describe('Viewport resolution [width, height]'),
+  resolution: z.tuple([z.number(), z.number()]).optional().describe('Viewport resolution as [width, height]'),
 }
 
 export async function benchmarkEffectFPS(
@@ -113,7 +113,7 @@ export async function benchmarkEffectFPS(
 export function registerBenchmarkEffectFPS(server: McpServer): void {
   server.tool(
     'benchmarkEffectFPS',
-    'Measure achieved FPS, jitter, frame timing stats against a target framerate.',
+    'Measure achieved FPS, jitter, and frame timing statistics against a target frame rate.',
     benchmarkEffectFPSSchema,
     async (args: any) => {
       const config = getConfig()

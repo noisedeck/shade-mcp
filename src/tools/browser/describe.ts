@@ -8,8 +8,8 @@ import { resolveEffectIds } from '../resolve-effects.js'
 import { toolResult } from '../tool-result.js'
 
 export const describeEffectFrameSchema = {
-  effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
-  effects: z.string().optional().describe('CSV of effect IDs'),
+  effect_id: z.string().optional().describe('One effect ID, such as "synth/noise"'),
+  effects: z.string().optional().describe('Comma-separated effect IDs'),
   prompt: z.string().describe('Analysis prompt for the AI vision model'),
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
   capture_image: z.boolean().optional().default(false)
@@ -69,7 +69,7 @@ export async function describeEffectFrame(
 export function registerDescribeEffectFrame(server: McpServer): void {
   server.tool(
     'describeEffectFrame',
-    'Render frame + AI vision analysis. User provides analysis prompt.',
+    'Render a frame. Analyze the image with AI vision, using the prompt that the user supplies.',
     describeEffectFrameSchema,
     async (args: any) => {
       const config = getConfig()

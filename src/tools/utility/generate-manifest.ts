@@ -132,7 +132,7 @@ function sortKeys(obj: any): any {
 export function registerGenerateManifest(server: McpServer): void {
   server.tool(
     'generateManifest',
-    'Rebuild effect manifest by scanning effects directory.',
+    'Scan the effects directory to rebuild the effect manifest.',
     generateManifestSchema,
     async () => {
       const config = getConfig()

@@ -5,14 +5,14 @@ import { expandQueryWithSynonyms } from '../../knowledge/shader-knowledge.js'
 import { toolResult } from '../tool-result.js'
 
 export const searchEffectsSchema = {
-  query: z.string().describe('Search query - concept, algorithm, tag, or visual style'),
+  query: z.string().describe('Search query: concept, algorithm, tag, or visual style'),
   limit: z.number().optional().default(10).describe('Maximum results'),
 }
 
 export function registerSearchEffects(server: McpServer): void {
   server.tool(
     'searchEffects',
-    'Search effect library by concept, tag, algorithm, or visual style. Synonym expansion.',
+    'Search the effect library by concept, tag, algorithm, or visual style. The tool expands the query with synonyms.',
     searchEffectsSchema,
     async (args: any) => {
       const index = await getSharedEffectIndex()

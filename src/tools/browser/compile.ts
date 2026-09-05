@@ -8,8 +8,8 @@ import { toolResult } from '../tool-result.js'
 
 
 export const compileEffectSchema = {
-  effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
-  effects: z.string().optional().describe('CSV of effect IDs'),
+  effect_id: z.string().optional().describe('One effect ID, such as "synth/noise"'),
+  effects: z.string().optional().describe('Comma-separated effect IDs'),
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
 }
 
@@ -68,7 +68,7 @@ export async function compileEffect(
 export function registerCompileEffect(server: McpServer): void {
   server.tool(
     'compileEffect',
-    'Compile shader effect and return pass-level diagnostics. Supports glob/CSV batch.',
+    'Compile a shader effect. Return diagnostics for each pass. Use comma-separated effect IDs for a batch.',
     compileEffectSchema,
     async (args: any) => {
       const config = getConfig()

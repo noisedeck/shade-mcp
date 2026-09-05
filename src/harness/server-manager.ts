@@ -122,7 +122,7 @@ export async function acquireServer(
 ): Promise<string> {
   if (refCount > 0) {
     if (port !== requestedPort) {
-      throw new Error(`Server already running on port ${activePort} (requested ${requestedPort}), cannot switch to ${port}`)
+      throw new Error(`The server already runs on port ${activePort} (requested ${requestedPort}). It cannot switch to ${port}.`)
     }
     refCount++
     return getServerUrl()

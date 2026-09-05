@@ -28,20 +28,21 @@ npm run setup          # install Playwright Chromium (browser tools only)
 
 ## Viewer
 
-The eight browser tools drive a real Chromium against a viewer page that hosts
-the renderer. shade-mcp does not ship one: point `SHADE_VIEWER_ROOT` at a
-directory containing an `index.html` that exposes the renderer as window
-globals, and set `SHADE_GLOBALS_PREFIX` to match them.
+The eight browser tools use Chromium to control a viewer page that hosts the renderer.
+shade-mcp does not include a viewer.
+Set `SHADE_VIEWER_ROOT` to the smallest directory containing the viewer and its imported modules.
+The page must expose the renderer through window globals.
+Set `SHADE_GLOBALS_PREFIX` to match those globals.
 
 | Project | `SHADE_VIEWER_ROOT` | `SHADE_VIEWER_PATH` | `SHADE_GLOBALS_PREFIX` |
 |---------|---------------------|---------------------|------------------------|
 | noisemaker | `<noisemaker>` | `/demo/shaders/` | `__noisemaker` |
 | portable | `<portable>/viewer` | *(default `/`)* | `__portable` |
 
-noisemaker's viewer page lives at `demo/shaders/` but imports the engine from
-`shaders/src/` at the repository root, so the root is what has to be served —
-point `SHADE_VIEWER_ROOT` at the page's own directory and every module 404s.
-Dotfiles stay refused wherever the root is set.
+noisemaker's viewer page is in `demo/shaders/` and imports the engine from `shaders/src/` at the repository root.
+For noisemaker, set `SHADE_VIEWER_ROOT` to the repository root.
+If you use the page's directory as the root, every module request returns 404.
+The server refuses dotfiles regardless of the root.
 
 The analysis, knowledge, and utility tools read from disk and need no viewer.
 
@@ -142,29 +143,29 @@ In `~/.codeium/windsurf/mcp_config.json`:
 
 ### Browser Tools (8)
 
-Require Playwright Chromium and a viewer (see [Viewer](#viewer)).
+These tools require Playwright Chromium and a viewer (see [Viewer](#viewer)).
 
 | Tool | Description |
 |------|-------------|
-| `compileEffect` | Compile shader effect, return pass-level diagnostics. Supports glob/CSV batch. |
-| `renderEffectFrame` | Render single frame, compute image metrics (mean RGB, variance, blank/monochrome detection), optional PNG capture. |
-| `describeEffectFrame` | Render frame + AI vision analysis. Requires `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`. |
-| `benchmarkEffectFPS` | Measure FPS, jitter, and frame timing stats against a target framerate. |
-| `testUniformResponsiveness` | Test each uniform modifies output. Returns per-uniform pass/fail. |
-| `testNoPassthrough` | Verify filter effects actually modify input (>1% pixel difference). |
-| `testPixelParity` | Compare WebGL2 vs WebGPU rendering pixel-by-pixel within epsilon tolerance. |
-| `runDslProgram` | Compile and execute arbitrary DSL code. Returns metrics + pass status. |
+| `compileEffect` | Compile a shader effect. Return diagnostics for each pass. Use comma-separated effect IDs for a batch. |
+| `renderEffectFrame` | Render one frame. Return mean RGB, variance, and blank/monochrome detection. Optionally capture a PNG. |
+| `describeEffectFrame` | Render a frame. Analyze the image with AI vision. The tool requires `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`. |
+| `benchmarkEffectFPS` | Measure FPS, jitter, and frame timing statistics against a target frame rate. |
+| `testUniformResponsiveness` | Check whether each uniform changes the output. Return a pass/fail result for each uniform. |
+| `testNoPassthrough` | Check that filter effects change their input (>1% pixel difference). |
+| `testPixelParity` | Compare WebGL2 and WebGPU output pixel by pixel within the epsilon tolerance. |
+| `runDslProgram` | Compile arbitrary DSL code. Execute the program. Return metrics and pass status. |
 
 ### Analysis Tools (4)
 
-On-disk analysis, no browser needed.
+These tools analyze files on disk and do not need a browser.
 
 | Tool | Description |
 |------|-------------|
-| `checkEffectStructure` | Detect unused files, broken refs, naming violations, leaked uniforms, structural parity issues. |
-| `checkAlgEquiv` | AI semantic comparison of GLSL/WGSL pairs. Requires AI key. |
-| `compareShaders` | Static structural comparison: function names, uniforms, line counts. |
-| `analyzeBranching` | AI analysis of unnecessary shader branching with optimization suggestions. Requires AI key. |
+| `checkEffectStructure` | Detect unused files, broken references, naming violations, leaked uniforms, and structural parity issues. |
+| `checkAlgEquiv` | Compare the semantics of GLSL/WGSL pairs with AI. The tool requires an AI key. |
+| `compareShaders` | Compare shader structure: function names, uniforms, and line counts. |
+| `analyzeBranching` | Analyze unnecessary shader branching with AI. Return optimization suggestions. The tool requires an AI key. |
 
 ### Knowledge Tools (4)
 
@@ -173,9 +174,9 @@ In-memory search indexes.
 | Tool | Description |
 |------|-------------|
 | `searchEffects` | Search effect library by concept, tag, algorithm, or visual style. |
-| `analyzeEffect` | Full definition, shader source, uniforms, and passes for an effect ID. |
-| `searchShaderSource` | Regex search through GLSL source code across all effects. |
-| `searchShaderKnowledge` | Semantic search over curated shader docs: DSL grammar, GLSL techniques, patterns, errors. |
+| `analyzeEffect` | Return the full definition, shader source, uniforms, and passes for an effect ID. |
+| `searchShaderSource` | Search GLSL source code across all effects with a regular expression. |
+| `searchShaderKnowledge` | Search curated shader documentation by meaning: DSL grammar, GLSL techniques, patterns, and errors. |
 
 ### Utility Tools (2)
 
@@ -193,7 +194,7 @@ npm run build      # build with tsup
 npm run dev        # watch mode
 ```
 
-Tests and typecheck are separate gates: vitest does not typecheck, so run both.
+Tests and typecheck are separate checks. Vitest does not typecheck. Run both commands.
 
 ## License
 

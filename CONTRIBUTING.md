@@ -9,7 +9,7 @@ npm install            # installs dependencies and builds dist/
 npm run setup          # install Playwright Chromium, for the browser tools
 ```
 
-The browser tools also need a viewer page; see [Viewer](README.md#viewer).
+The browser tools also need a viewer page. See [Viewer](README.md#viewer).
 
 ## Before opening a pull request
 
@@ -18,19 +18,19 @@ npm run typecheck
 npm test
 ```
 
-Run both. Vitest does not typecheck, so a suite can be fully green while `tsc`
-is failing.
+Run both commands. Vitest does not typecheck. All tests can pass while `tsc` fails.
 
 ## Conventions
 
 - ESM only, Node 22 or newer.
-- Each tool lives in `src/tools/<category>/` and exports a `register*` function
-  that takes an `McpServer`, plus a plain function holding the logic so it can
-  be tested without a server.
+- Put each tool in `src/tools/<category>/`.
+  Export a `register*` function that takes an `McpServer`.
+  Export a separate function with the tool logic, so tests can call it without a server.
 - Return results through `toolResult()` so failures carry `isError`.
-- Anything a tool caller supplies — effect IDs especially — becomes a
-  filesystem path. Validate containment; do not join it directly.
-- When a tool computes a verdict and also returns model output, spread the
-  model output first so the computed fields cannot be overwritten.
+- Tool caller input, especially effect IDs, becomes a filesystem path.
+  Check that the path stays within the permitted directory.
+  Do not join caller input directly to a path.
+- If a tool returns a computed verdict and model output, spread the model output first.
+  This order prevents model output from replacing the computed fields.
 - New behavior comes with a test. Bug fixes come with a test that fails before
   the fix.

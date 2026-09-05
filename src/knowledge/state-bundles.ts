@@ -31,7 +31,7 @@ import { AGENT_WORKFLOW_KNOWLEDGE, COMPACT_SHADER_KNOWLEDGE } from './workflow-k
  */
 export const RESEARCH_KNOWLEDGE = `
 ## RESEARCH PHASE EXPERTISE
-You are finding templates and understanding what effects can do.
+Find templates. Determine what the effects can do.
 
 **USE search_shader_knowledge** when you need to understand DSL syntax, effect patterns, or GLSL techniques.
 Query: "how to structure a filter effect", "noise function patterns", etc.
@@ -49,7 +49,7 @@ ${COMPACT_SHADER_KNOWLEDGE}
 export const PLAN_KNOWLEDGE = `
 ## PLAN PHASE EXPERTISE
 You create the effect specification. You are an expert in DSL and Effect Definition format.
-You do NOT write GLSL shader code - you prescribe what the GENERATE phase should implement.
+Do NOT write GLSL shader code. Specify what the GENERATE phase should implement.
 
 ${DSL_CRITICAL_RULES}
 
@@ -96,10 +96,10 @@ ${GLSL_RECIPES}
 ${REQUIRED_PATTERNS}
 
 ### Uniform Wiring Rules
-1. Every uniform in definition.js MUST be declared in GLSL
+1. You MUST declare every uniform from definition.js in GLSL.
 2. Types must match: float\u2192float, int\u2192int, boolean\u2192bool, vec2\u2192vec2, vec3\u2192vec3, vec4\u2192vec4
 3. Standard uniforms (always available): time, resolution
-4. For filters: uniform sampler2D inputTex;
+4. For filters, declare \`uniform sampler2D inputTex;\`.
 
 ## \u{1F6D1}\u{1F6D1}\u{1F6D1} NOISE LOOPING - READ BEFORE CODING \u{1F6D1}\u{1F6D1}\u{1F6D1}
 
@@ -112,22 +112,26 @@ vec2 timeCircle = vec2(cos(t), sin(t));
 float n = noise(uv * scale + timeCircle * 0.5);
 \`\`\`
 
-This is the only pattern for animated noise. There are no alternatives.
+Use this prescribed pattern for animated noise in generated shaders.
 
 ###  SEAMLESS LOOPING - HARD REQUIREMENTS
 
-**Time is 1-periodic on [0,1]. The loop must be INVISIBLE - no pop, no stutter, no hard reset.**
+**Time is 1-periodic on [0,1]. The loop must have no visible pop, stutter, or hard reset.**
 
 **THE DERIVATIVE RULE (WHY LOOPS FAIL):**
 Matching value(0) == value(1) is NOT ENOUGH! The **velocity/derivative** must ALSO match:
 - value(0) == value(1)  \u2190 position matches
 - value'(0) == value'(1) \u2190 velocity matches (smooth motion through boundary)
 
-If velocity doesn't match, you get a "hard reset" feel at t\u22480.999 even though values match.
-This is why fract(), mod(), smoothstep(), and linear time ALL fail - they have derivative discontinuities.
+If the velocities do not match, a "hard reset" occurs at t\u22480.999, even if the values match.
+**Use sin(), cos(), or periodicValue() as the time basis for generated animation.**
+Use integer cycle counts when these functions receive raw time. Both values and derivatives must match at the loop endpoints.
+Do not use raw nonperiodic time as the animation signal. Do not substitute ramps from fract(), mod(), smoothstep(), or custom easing.
+Spatial uses of fract(), mod(), and smoothstep() are permitted. Compositions with periodic signals must preserve both endpoint values and derivatives.
+Check the final animated result. A function name alone does not guarantee a loop.
 
 **THE BLEUJE PATTERN (Approved Looping Method):**
-Use a periodic function + offset. The mental model: "everything uses the same loopable time basis, each element varies via an offset."
+Use a periodic function with an offset. Everything uses the same looping time basis. Each element varies through an offset.
 
 \`\`\`glsl
 // Core looping helpers - COPY THESE EXACTLY
@@ -147,7 +151,7 @@ float periodicValue(float time, float offset) {
 
 1. **SEAM EQUALITY + DERIVATIVE CONTINUITY**
    - value(0) == value(1) AND value'(0) == value'(1)
-   - sin() and cos() satisfy BOTH conditions
+   - sin() and cos() with integer cycles of raw time satisfy BOTH conditions. Check both conditions after composition.
 
 2. **ROTATION**: \`angle = float(N) * TAU * time\` where N is integer (1, 2, 3...)
 
@@ -219,7 +223,9 @@ float n = noise(uv * scale + timeCircle * 0.5);  // Animated noise
 
 ### Core Principle: Periodic Function + Offset
 The approved mental model (from \u00c9tienne Jacob aka Bleuje):
-- "A periodic function plus an offset/delay, where everything uses the same loopable time basis and each element varies via an offset."
+- Use a periodic function with an offset or delay.
+- Everything uses the same looping time basis.
+- Each element varies through an offset.
 
 ### Hard Requirements (VERIFY ALL BEFORE SHIPPING):
 
@@ -238,7 +244,8 @@ The approved mental model (from \u00c9tienne Jacob aka Bleuje):
    - Oscillation: \`pos = start + dir * (amplitude * sin(TAU * phase))\`
 
 4. **NOISE = CIRCLE-SAMPLED (Bleuje Tutorial 3)**
-   - Map time to a circle, sample noise at that point:
+   - Map time to a circle.
+   - Sample noise at that point:
    \`\`\`glsl
    vec2 tc = vec2(cos(TAU * time), sin(TAU * time));
    float n = noise4D(vec4(uv * scale, tc));
@@ -249,7 +256,7 @@ The approved mental model (from \u00c9tienne Jacob aka Bleuje):
 - [ ] Is ALL time-based animation using sin(), cos(), or periodicValue()?
 - [ ] Are ALL cycle/rotation counts INTEGERS? (1, 2, 3)
 - [ ] Is noise sampled on a time-circle?
-- [ ] Does the derivative (velocity) also loop? (sin/cos guarantee this)
+- [ ] Does the derivative (velocity) also loop in the final animated result?
 - [ ] Have you verified value(0) == value(1) for EVERY animated channel?
 `
 
@@ -260,15 +267,15 @@ The approved mental model (from \u00c9tienne Jacob aka Bleuje):
  */
 export const VALIDATE_KNOWLEDGE = `
 ## VALIDATE PHASE EXPERTISE
-You verify the effect package is complete and correct.
+Check that the effect package is complete and correct.
 
 ### Validation Checklist
-1. All uniforms in definition.js are declared in GLSL
-2. All uniforms in GLSL exist in definition.js globals
-3. DSL program uses correct scaffolding pattern for effect type
-4. Animation uses sin(time*TAU) or cos(time*TAU), never raw time
-5. Filter effects chain from a generator
-6. Mixer effects have tex: read(surface) parameter
+1. Check that GLSL declares all uniforms from definition.js.
+2. Check that definition.js globals include all GLSL uniforms.
+3. Check that the DSL program uses the correct scaffolding pattern for the effect type.
+4. Check that animation uses sin(time*TAU) or cos(time*TAU), never raw time.
+5. Check that filter effects chain from a generator.
+6. Check that mixer effects have a tex: read(surface) parameter.
 `
 
 /**
@@ -277,17 +284,17 @@ You verify the effect package is complete and correct.
  */
 export const FIX_KNOWLEDGE = `
 ## FIX PHASE EXPERTISE
-You diagnose and fix specific issues. Focus on the problem, don't rebuild from scratch.
+You diagnose and fix specific issues. Focus on the problem. Do not rebuild the effect from the beginning.
 
 ### CRITICAL: "Unknown effect" Error
 
-If you see "Unknown effect: '<name>'" in compile_dsl error:
+If compile_dsl returns "Unknown effect: '<name>'":
 
 1. **Did create_effect succeed?** Check the previous tool result.
-2. **Is the DSL using 'search user'?** Your effect is in USER namespace!
-3. **Is the name EXACT?** Case-sensitive, character-for-character match.
+2. **Does the DSL include 'search user'?** Your effect belongs to the USER namespace.
+3. **Does the name match EXACTLY?** Check every character, including letter case.
 
-FIX: Ensure your DSL looks like:
+Use this DSL structure:
 \`\`\`
 search user
 yourEffectName().write(o0)
@@ -315,7 +322,7 @@ ${REQUIRED_PATTERNS}
 
 export const DSL_RESEARCH_KNOWLEDGE = `
 ## DSL RESEARCH PHASE
-You are finding effects and example programs to compose a DSL program.
+Find effects and example programs to compose a DSL program.
 
 ${EFFECT_CATALOG}
 

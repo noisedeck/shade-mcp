@@ -28,14 +28,17 @@ void main() {
 
 ##  WILL IT LOOP - SEAMLESS ANIMATION RULES
 
-**This is THE most critical section for animation. Master it completely.**
+**This section has the highest priority for animation. You must understand all its rules.**
 
 ### Core Definition
 
 Treat \`time\` as **1-periodic** on **[0, 1]**: \`t=1\` must be IDENTICAL to \`t=0\`.
 All time-driven values must be continuous across the boundary with NO visible "pop" at the seam.
 
-The approved mental model (Étienne Jacob / Bleuje): "A periodic function plus an offset/delay, where **everything** uses the same loopable time basis and each element varies via an offset."
+The approved method comes from Étienne Jacob / Bleuje:
+1. Use a periodic function with an offset or delay.
+2. Use the same looping time basis for everything.
+3. Vary each element through an offset.
 
 Reference: [bleuje.com/tutorial2](https://bleuje.com/tutorial2/) and [bleuje.com/tutorial3](https://bleuje.com/tutorial3/)
 
@@ -44,14 +47,17 @@ Reference: [bleuje.com/tutorial2](https://bleuje.com/tutorial2/) and [bleuje.com
 **Matching value(0) == value(1) is NOT ENOUGH!**
 The **velocity/derivative** must ALSO match, or you get a "hard reset" at t≈0.999.
 
-**sin() and cos() are the ONLY functions where both VALUE and DERIVATIVE loop perfectly.**
-No linear time, no fract(), no mod(), no smoothstep(), no custom easing.
+**Use sin(), cos(), or periodicValue() as the time basis for generated animation.**
+Use integer cycle counts when these functions receive raw time. Both values and derivatives must match at the loop endpoints.
+Do not use raw nonperiodic time as the animation signal. Do not substitute ramps from fract(), mod(), smoothstep(), or custom easing.
+Spatial uses of fract(), mod(), and smoothstep() are permitted. Compositions with periodic signals must preserve both endpoint values and derivatives.
+Check the final animated result. A function name alone does not guarantee a loop.
 
-### HARD REQUIREMENTS (Verify ALL Before Shipping)
+### HARD REQUIREMENTS (Check ALL Before Shipping)
 
 1. **SEAM EQUALITY + DERIVATIVE CONTINUITY**
    - For EVERY animated value: value(0) == value(1) AND value'(0) == value'(1)
-   - sin/cos satisfy BOTH conditions automatically
+   - sin/cos with integer cycles of raw time satisfy BOTH conditions. Check both conditions after composition.
    - If the value controls motion, the seam must not create a visible kink
 
 2. **ROTATION = INTEGER TURNS**
@@ -67,7 +73,8 @@ No linear time, no fract(), no mod(), no smoothstep(), no custom easing.
    - Pattern: \`pos = start + radius * vec2(cos(TAU*time), sin(TAU*time))\`
 
 4. **NOISE = TIMECIRCLE PATTERN** (Bleuje Tutorial 3)
-   - Map time to a circle, sample noise at that point:
+   - Map time to a circle.
+   - Sample noise at that point:
    - \`vec2 tc = vec2(cos(TAU*time), sin(TAU*time)); noise(uv + tc*0.5);\`
 
 ### THE BLEUJE PATTERN - Periodic Function + Offset
@@ -165,7 +172,7 @@ float loopedScalar(float base, float time, float offset, float amp, int cyclesN)
 
 ### Animation Checklist
 
-**Verify your shader uses these patterns:**
+**Check that your shader uses these patterns:**
 
 - [ ] Animation uses sin(time * TAU) or cos(time * TAU)
 - [ ] Cycle multipliers are integers (1, 2, 3...)
@@ -392,13 +399,12 @@ color *= 0.8 + 0.2 * scanline;
 ## PROVEN LOOPING IMPLEMENTATIONS FROM NOISEMAKER
 
 These are **real, working implementations** from the Noisemaker effect library.
-**STUDY THESE PATTERNS - they show exactly how to create seamless loops.**
+**Study these patterns. They show exactly how to create loops without visible seams.**
 
 ### EXAMPLE 1: synth/noise - Periodic Function with Time Blend
 
 **Technique:** Use a periodic function to blend noise values over time.
-The noise lattice itself doesn't animate - instead, \`periodicFunction(time)\`
-modulates the blend parameter, creating smooth cyclic variation.
+The noise lattice does not animate. \`periodicFunction(time)\` modulates the blend parameter to create smooth cyclic variation.
 
 \`\`\`glsl
 // From synth/noise - the periodicFunction approach
@@ -415,14 +421,12 @@ float blend = periodicFunction(t) * amplitude;  // Smoothly loops!
 vec3 color = multires(st, freq, octaves, seed, blend);
 \`\`\`
 
-**Key insight:** The noise function is stationary - only the \`blend\` parameter
-oscillates via \`periodicFunction(time)\`. The noise coordinates stay fixed.
+The noise function is stationary. Only the \`blend\` parameter oscillates through \`periodicFunction(time)\`. The noise coordinates stay fixed.
 
 ### EXAMPLE 2: synth/perlin - Two Approaches for Different Dimensions
 
 **2D Mode: Rotating Gradient Angles**
-The gradient vectors at each lattice point rotate with time, keeping the
-noise structure coherent while creating smooth animation.
+The gradient vectors at each lattice point rotate with time. This rotation keeps the noise structure coherent and creates smooth animation.
 
 \`\`\`glsl
 // From synth/perlin (2D mode) - gradients rotate with time
@@ -472,13 +476,12 @@ float z = time * Z_PERIOD;  // or time / TAU * Z_PERIOD
 float n = noise3D(vec3(uv * scale, z));
 \`\`\`
 
-**Key insight:** The noise volume has periodicity built into the Z dimension.
+The noise volume is periodic in the Z dimension.
 When time reaches 1.0, z wraps to 0.0 identically.
 
 ### EXAMPLE 3: filter/tunnel - Integer Speed for Perfect Loops
 
-**Technique:** When speed is an INTEGER, the tunnel advances by exactly N cells,
-ending at the same position it started. Non-integer speed creates seams.
+**Technique:** When speed is an INTEGER, the tunnel advances by exactly N cells. It ends at its starting position. Non-integer speed creates seams.
 
 \`\`\`glsl
 // From filter/tunnel - integer speed requirement

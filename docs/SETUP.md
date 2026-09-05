@@ -1,9 +1,11 @@
 # Setting Up shade-mcp for Your Project
 
-shade-mcp replaces the built-in MCP servers in **noisemaker** and **portable**. This guide walks through setup for each project in VS Code and Claude Code.
+shade-mcp replaces the built-in MCP servers in **noisemaker** and **portable**.
+This guide explains setup for each project in VS Code and Claude Code.
 
-Paths below are written as `/path/to/<project>`. Substitute your own checkout
-locations; MCP clients do not expand `~`, so use absolute paths.
+The paths below use `/path/to/<project>`.
+Replace these paths with your checkout locations.
+Use absolute paths. MCP clients do not expand `~`.
 
 ## Prerequisites
 
@@ -15,7 +17,7 @@ npm install                # installs dependencies and builds dist/
 npm run setup              # install Playwright Chromium (browser tools only)
 ```
 
-Verify it built:
+Check that the build created the entry point:
 
 ```bash
 ls dist/index.js  # should exist
@@ -23,19 +25,22 @@ ls dist/index.js  # should exist
 
 ## The viewer
 
-The eight browser tools need a viewer page that hosts the renderer. shade-mcp
-does not bundle one, so each project points `SHADE_VIEWER_ROOT` at its own and
-sets `SHADE_GLOBALS_PREFIX` to match the window globals that viewer exposes.
-Both are included in the configs below. The analysis, knowledge, and utility
-tools read from disk and work without a viewer.
+The eight browser tools need a viewer page that hosts the renderer.
+shade-mcp does not include a viewer.
+Set `SHADE_VIEWER_ROOT` to your project's viewer root.
+Set `SHADE_GLOBALS_PREFIX` to match the window globals that the viewer exposes.
+The configurations below include both variables.
+
+The analysis, knowledge, and utility tools read from disk and work without a viewer.
 
 ## noisemaker
 
 Effects live at `noisemaker/shaders/effects/` in nested `namespace/effect/` layout, and the demo viewer at `noisemaker/demo/shaders/`.
 
-The viewer *root* is the repository root, not `demo/shaders/`: the page imports
-the engine from `shaders/src/` at the top level, so serving only the page's own
-directory makes every module request 404 and the renderer global never appears.
+Set the viewer root to the repository root.
+The page imports the engine from `shaders/src/` at the repository root.
+If you serve only `demo/shaders/`, every module request returns 404.
+The renderer global then never appears.
 
 ### VS Code (Copilot)
 
@@ -146,7 +151,8 @@ Add to `~/.claude/settings.json` (or project-level `.claude/settings.local.json`
 
 ### What works
 
-All tools work. Since there's only one effect, you can omit `effect_id` — it auto-detects:
+All tools work. You can omit `effect_id` because the directory contains only one effect.
+shade-mcp detects that effect automatically:
 
 ```
 compileEffect({ backend: "webgl2" })
@@ -154,15 +160,16 @@ renderEffectFrame({ backend: "webgpu", capture_image: true })
 testPixelParity()
 ```
 
-You'll see a warning in stderr: `[shade-mcp] Auto-detected flat effect layout: effect` — this is expected.
+shade-mcp writes this expected warning to stderr: `[shade-mcp] Auto-detected flat effect layout: effect`.
 
 ## Disabling the old MCP
 
-You don't need to delete the old MCP servers. Just make sure only one is active at a time:
+You do not need to delete the old MCP servers.
+Make sure only one server is active at a time:
 
 - **VS Code**: Remove the old server entry from `.vscode/mcp.json` or `.vscode/settings.json`
-- **Claude Code**: Remove the old server entry from whichever settings file it's in
-- **Cursor**: Remove from `.cursor/mcp.json`
+- **Claude Code**: Remove the old server entry from the settings file that contains it
+- **Cursor**: Remove the old server entry from `.cursor/mcp.json`
 
 If both old and new MCPs are active, you'll get duplicate tool names and unpredictable behavior.
 
@@ -174,13 +181,23 @@ If both old and new MCPs are active, you'll get duplicate tool names and unpredi
 
 **"Multiple effects found. Please specify effect_id"** — You're pointing at a multi-effect library (like noisemaker) but didn't pass `effect_id`. Pass it explicitly: `compileEffect({ effect_id: "synth/noise" })`.
 
-**"Invalid effect id"** — Effect IDs are resolved inside `SHADE_EFFECTS_DIR`; absolute paths and `..` segments are refused. Pass a plain `namespace/effect` ID.
+**"Invalid effect id"** — shade-mcp resolves effect IDs inside `SHADE_EFFECTS_DIR`.
+It refuses absolute paths and `..` segments.
+Pass a plain `namespace/effect` ID.
 
-**Browser tools hang or time out** — Check three things: `npm run setup` has installed Chromium; `SHADE_VIEWER_ROOT` points at a directory containing the viewer's `index.html`; and `SHADE_GLOBALS_PREFIX` matches the globals that viewer exposes. A prefix mismatch means the renderer global never appears and setup waits for it.
+**Browser tools hang or time out** — Check these conditions:
+
+1. `npm run setup` installed Chromium.
+2. `SHADE_VIEWER_ROOT` points to a directory containing the viewer's `index.html`.
+3. `SHADE_GLOBALS_PREFIX` matches the globals that the viewer exposes.
+
+If the prefix does not match, the renderer global never appears. Setup waits for that global.
 
 **I want to watch the render happen** — Set `SHADE_HEADLESS=0` to run headed. The default is headless, which is also the only mode that works on a machine with no display.
 
-**AI tools return "No API key"** — Set `ANTHROPIC_API_KEY` (preferred) or `OPENAI_API_KEY` in the env block of your MCP config, or create a `.anthropic` / `.openai` file in the project root containing just the key.
+**AI tools return "No API key"** — Set `ANTHROPIC_API_KEY` (preferred) or `OPENAI_API_KEY` in your MCP configuration's env block.
+Alternatively, create a `.anthropic` or `.openai` file in the project root.
+The file must contain only the key.
 
 ## Environment Variables Reference
 
@@ -201,6 +218,6 @@ If both old and new MCPs are active, you'll get duplicate tool names and unpredi
 | `ANTHROPIC_API_KEY` | No | — | For AI-powered tools |
 | `OPENAI_API_KEY` | No | — | Fallback AI provider |
 
-The viewer server binds to `127.0.0.1` and serves only `SHADE_VIEWER_ROOT` and
-`SHADE_EFFECTS_DIR`. Point `SHADE_VIEWER_ROOT` at the viewer directory itself
-rather than a whole workspace, so unrelated files are never in scope.
+The viewer server binds to `127.0.0.1` and serves only `SHADE_VIEWER_ROOT` and `SHADE_EFFECTS_DIR`.
+Set `SHADE_VIEWER_ROOT` to the viewer directory itself instead of a whole workspace.
+This setting excludes unrelated files.

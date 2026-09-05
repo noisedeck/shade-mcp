@@ -1,6 +1,7 @@
 export const EFFECT_CATALOG = `## Effect Catalog
 
-**IMPORTANT: Do NOT guess parameter names.** Copy parameter names exactly from the example programs below or from the exemplar programs. If you don't see an example of an effect being used with parameters, use it with NO parameters and let the defaults work.
+**Do NOT guess parameter names.** Copy parameter names exactly from the example programs below or from the exemplar programs.
+If no example shows parameters for an effect, use that effect with NO parameters. The effect then uses its defaults.
 
 ### SYNTH (Generators) - Start chains, create images from nothing
 noise, fractal, julia, mandelbrot, newton, cell, perlin, curl, gabor, gradient,

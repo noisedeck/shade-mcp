@@ -12,7 +12,7 @@
 export const DSL_EXEMPLAR_PATTERNS = `
 ## Canonical DSL Scaffolding Patterns
 
-These patterns are MANDATORY — always follow them for the given effect type.
+These patterns are MANDATORY. Always use the pattern for the given effect type.
 
 ### Points (particle systems)
 \`\`\`
@@ -75,13 +75,13 @@ render(o0)
 \`\`\`
 
 ### RULES
-1. Points effects ALWAYS get pointsEmit()/pointsRender() wrapper
-2. Billboard particles need a sprite on a SEPARATE surface
-3. 3D effects ALWAYS end with render3d()
-4. Filters ALWAYS chain from a generator (never standalone)
-5. Mixers ALWAYS need tex: read(surface) param
-6. Feedback loops use loopBegin()/loopEnd() with filter effects inside
-7. Always use noise() as the default starter (with ridges: true for visual interest)
+1. ALWAYS wrap points effects with pointsEmit()/pointsRender().
+2. Put the sprite for billboard particles on a SEPARATE surface.
+3. ALWAYS end 3D effect chains with render3d().
+4. ALWAYS chain filters from a generator. Never use filters alone.
+5. ALWAYS supply a tex: read(surface) parameter to mixers.
+6. Put filter effects between loopBegin()/loopEnd() in feedback loops.
+7. Always use noise() as the default starter. Set ridges: true for visual interest.
 `
 
 // ═══════════════════════════════════════════════════════════════════════════

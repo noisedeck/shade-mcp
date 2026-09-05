@@ -7,8 +7,8 @@ import { resolveEffectIds } from '../resolve-effects.js'
 import { toolResult } from '../tool-result.js'
 
 export const testPixelParitySchema = {
-  effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
-  effects: z.string().optional().describe('CSV of effect IDs'),
+  effect_id: z.string().optional().describe('One effect ID, such as "synth/noise"'),
+  effects: z.string().optional().describe('Comma-separated effect IDs'),
   epsilon: z.number().optional().default(1).describe('Allowed per-channel difference (0-255)'),
   seed: z.number().optional().default(42).describe('Random seed for reproducible noise'),
 }
@@ -272,7 +272,7 @@ export async function testPixelParity(
 export function registerTestPixelParity(server: McpServer): void {
   server.tool(
     'testPixelParity',
-    'Render on both WebGL2 and WebGPU, compare pixel-by-pixel within epsilon tolerance.',
+    'Render with both WebGL2 and WebGPU. Compare the output pixel by pixel within the epsilon tolerance.',
     testPixelParitySchema,
     async (args: any) => {
       const config = getConfig()

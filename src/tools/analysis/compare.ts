@@ -131,7 +131,7 @@ export async function compareShaders(effectId: string): Promise<any> {
 export function registerCompareShaders(server: McpServer): void {
   server.tool(
     'compareShaders',
-    'Static structural comparison: function names, uniform declarations, line counts. No AI needed.',
+    'Compare shader structure: function names, uniform declarations, and line counts. This tool does not require AI.',
     compareShadersSchema,
     async (args: any) => {
       const result = await compareShaders(args.effect_id)

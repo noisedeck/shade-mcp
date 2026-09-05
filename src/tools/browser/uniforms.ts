@@ -6,8 +6,8 @@ import { resolveEffectIds } from '../resolve-effects.js'
 import { toolResult } from '../tool-result.js'
 
 export const testUniformResponsivenessSchema = {
-  effect_id: z.string().optional().describe('Single effect ID (e.g., "synth/noise")'),
-  effects: z.string().optional().describe('CSV of effect IDs'),
+  effect_id: z.string().optional().describe('One effect ID, such as "synth/noise"'),
+  effects: z.string().optional().describe('Comma-separated effect IDs'),
   backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Rendering backend'),
 }
 
@@ -132,7 +132,7 @@ export async function testUniformResponsiveness(
 export function registerTestUniformResponsiveness(server: McpServer): void {
   server.tool(
     'testUniformResponsiveness',
-    'For each uniform: render baseline, modify value, compare output. Returns per-uniform pass/fail.',
+    'For each uniform:\n1. Render a baseline.\n2. Change the uniform value.\n3. Compare the output.\nReturn a pass/fail result for each uniform.',
     testUniformResponsivenessSchema,
     async (args: any) => {
       const config = getConfig()

@@ -9,7 +9,7 @@ import { toolResult } from '../tool-result.js'
 
 export const analyzeBranchingSchema = {
   effect_id: z.string().describe('Effect ID (e.g., "synth/noise")'),
-  backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Which shader language to analyze'),
+  backend: z.enum(['webgl2', 'webgpu']).default('webgl2').describe('Backend that selects the shader language to analyze'),
 }
 
 export async function analyzeBranching(effectId: string, backend: string): Promise<any> {
@@ -51,7 +51,7 @@ export async function analyzeBranching(effectId: string, backend: string): Promi
   const shaderText = sources.map(s => `--- ${s.file} ---\n${s.source}`).join('\n\n')
 
   const response = await callAI({
-    system: 'You are a senior GPU shader developer. Identify UNNECESSARY branching in shader code that could be flattened for better GPU performance. Focus on simple if/else over uniforms, not complex algorithms. Severity: high (inner loops), medium (per-fragment), low (negligible). Respond with JSON: {shaders: [{file, opportunities: [{location, description, severity}], notes}], summary}',
+    system: 'You are a senior GPU shader developer. Identify unnecessary shader branches that could be flattened for better GPU performance. Focus on simple if/else over uniforms. Exclude complex algorithms. Assign severity:\n- high: inner loops\n- medium: per-fragment\n- low: negligible.\n Respond with JSON: {shaders: [{file, opportunities: [{location, description, severity}], notes}], summary}',
     userContent: [
       { type: 'text', text: `Effect definition:\n${defContext}\n\nShader sources:\n${shaderText}\n\nIdentify unnecessary branching.` }
     ],
@@ -80,7 +80,7 @@ export async function analyzeBranching(effectId: string, backend: string): Promi
 export function registerAnalyzeBranching(server: McpServer): void {
   server.tool(
     'analyzeBranching',
-    'AI analysis of unnecessary shader branching with optimization suggestions.',
+    'Analyze unnecessary shader branching with AI. Return optimization suggestions.',
     analyzeBranchingSchema,
     async (args: any) => {
       const result = await analyzeBranching(args.effect_id, args.backend)

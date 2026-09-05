@@ -14,7 +14,7 @@ export const analyzeEffectSchema = {
 export function registerAnalyzeEffect(server: McpServer): void {
   server.tool(
     'analyzeEffect',
-    'Deep-dive into an effect: full definition, shader source, uniforms, passes.',
+    'Return the full definition, shader source, uniforms, and passes for an effect.',
     analyzeEffectSchema,
     async (args: any) => {
       const config = getConfig()

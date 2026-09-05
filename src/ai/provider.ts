@@ -95,7 +95,7 @@ async function callAnthropic(options: CallAIOptions): Promise<string | null> {
 
   let system = options.system
   if (options.jsonMode) {
-    system += '\n\nIMPORTANT: Respond with valid JSON only. No markdown, no explanation.'
+    system += '\n\nRespond with valid JSON only. Do not include Markdown or explanations.'
   }
 
   const response = await client.messages.create({
@@ -132,4 +132,4 @@ async function callOpenAI(options: CallAIOptions): Promise<string | null> {
   return response.choices[0]?.message?.content || null
 }
 
-export const NO_AI_KEY_MESSAGE = 'No AI API key found. Set ANTHROPIC_API_KEY or OPENAI_API_KEY, or create .anthropic/.openai file in project root.'
+export const NO_AI_KEY_MESSAGE = 'No AI API key found. Set ANTHROPIC_API_KEY or OPENAI_API_KEY. Alternatively, create a .anthropic or .openai file in the project root.'

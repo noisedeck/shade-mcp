@@ -1,6 +1,6 @@
 export const EFFECT_DEFINITION_REFERENCE = `## Effect Definition Specification
 
-Effects are JavaScript modules exporting an Effect instance.
+An effect is a JavaScript module that exports an Effect instance.
 
 ### Minimal Structure
 
@@ -77,7 +77,7 @@ passes: [
 ]
 \`\`\``
 
-export const EFFECT_DEFINITION_DEEP = `## Effect Definition - Guru Level
+export const EFFECT_DEFINITION_DEEP = `## Effect Definition Details
 
 ### The Three Data Flows
 
@@ -167,7 +167,7 @@ export const REQUIRED_PATTERNS = `## REQUIRED Patterns
 | Aspect ratio | \`#define aspectRatio (resolution.x / resolution.y)\` |
 | Animated UV offset | \`uv + vec2(sin(time * TAU), cos(time * TAU))\` |
 | Animated noise | \`noise(pos + vec2(sin(time * TAU), cos(time * TAU)) * 0.5)\` |
-| Uniform declaration | All uniforms in definition.js must be declared in GLSL |
+| Uniform declaration | Declare all uniforms from definition.js in GLSL |
 
 ### DSL Requirements
 

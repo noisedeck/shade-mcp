@@ -155,7 +155,7 @@ export async function checkEffectStructure(effectId: string): Promise<any> {
           type: 'uniform_function',
           name: u,
           file: `glsl/${gf}`,
-          message: `Uniform "${u}" collides with function "${u}()" in same file`
+          message: `Uniform "${u}" collides with function "${u}()" in the same file`
         })
       }
       if (GLSL_RESERVED.has(u)) {
@@ -188,7 +188,7 @@ export async function checkEffectStructure(effectId: string): Promise<any> {
 export function registerCheckEffectStructure(server: McpServer): void {
   server.tool(
     'checkEffectStructure',
-    'Detect unused files, broken references, naming violations, leaked/undefined uniforms, missing descriptions, structural parity issues, and GLSL name collisions (uniform vs function, reserved words, built-in shadowing).',
+    'Detect these effect issues:\n- unused files\n- broken references\n- naming violations\n- leaked or undefined uniforms\n- missing descriptions\n- structural parity issues\n- GLSL name collisions: uniforms versus functions, reserved words, or built-in shadowing.',
     checkEffectStructureSchema,
     async (args: any) => {
       const result = await checkEffectStructure(args.effect_id)

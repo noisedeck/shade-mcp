@@ -105,7 +105,7 @@ export async function checkAlgEquiv(effectId: string): Promise<any> {
 export function registerCheckAlgEquiv(server: McpServer): void {
   server.tool(
     'checkAlgEquiv',
-    'AI semantic comparison of GLSL/WGSL pairs. Flags truly divergent algorithms, ignores syntax differences.',
+    'Compare the semantics of GLSL/WGSL pairs with AI. Flag divergent algorithms. Ignore syntax differences.',
     checkAlgEquivSchema,
     async (args: any) => {
       const result = await checkAlgEquiv(args.effect_id)

@@ -73,7 +73,7 @@ export class BrowserSession {
   }
 
   async setup(): Promise<void> {
-    if (this._isSetup) throw new Error('Session already set up. Call teardown() first.')
+    if (this._isSetup) throw new Error('The session is already initialized. Call teardown() first.')
 
     await acquireBrowserSlot()
     this._slotAcquired = true

@@ -17,7 +17,9 @@ npm test         # vitest
 - `src/formats/` — Effect definition parsers. Auto-detects definition.json (preferred) vs definition.js (regex extraction).
 - `src/harness/` — Browser automation. `server-manager.ts` (ref-counted HTTP server), `browser-session.ts` (Playwright lifecycle), `pixel-reader.ts` (image metrics).
 - `src/tools/browser/` — 8 browser-based tools (compile, render, describe, benchmark, uniforms, passthrough, parity, dsl).
-- `src/tools/analysis/` — 4 on-disk analysis tools (structure, alg-equiv, compare, branching). `structure.ts` detects GLSL name collisions (uniform vs function, reserved words, built-in shadowing). `compare.ts` exports `extractFunctionNames`, `extractUniforms`, and `stripComments` helpers for GLSL/WGSL static analysis.
+- `src/tools/analysis/` — 4 tools analyze files on disk (structure, alg-equiv, compare, branching).
+  `structure.ts` detects GLSL name collisions: uniforms versus functions, reserved words, and built-in shadowing.
+  `compare.ts` exports `extractFunctionNames`, `extractUniforms`, and `stripComments` helpers for GLSL/WGSL static analysis.
 - `src/tools/knowledge/` — 4 knowledge tools (search-effects, analyze-effect, search-source, search-knowledge).
 - `src/tools/utility/` — 2 utility tools (list-effects, generate-manifest).
 - `src/knowledge/` — TF-IDF vector DB, curated shader knowledge, effect index, GLSL index.
@@ -42,7 +44,9 @@ export function registerMyTool(server: any): void {
 
 ## Per-Project Setup
 
-shade-mcp is configured entirely via env vars. Each consumer project points its MCP client at shade-mcp's binary with project-specific env vars.
+Configure shade-mcp entirely through environment variables.
+Point each project's MCP client to shade-mcp's binary.
+Supply the environment variables for that project.
 
 **VS Code** (`.vscode/mcp.json`):
 ```json
@@ -70,15 +74,15 @@ shade-mcp is configured entirely via env vars. Each consumer project points its 
 |---|---|---|---|
 | `SHADE_EFFECTS_DIR` | Yes | `./effects` | Directory containing effect definitions |
 | `SHADE_PROJECT_ROOT` | No | cwd | Project root (for .anthropic/.openai key files) |
-| `SHADE_VIEWER_ROOT` | No | `$PROJECT_ROOT/viewer` | HTTP server root. Point at the viewer directory, never a whole workspace — everything under it is reachable from the loopback server |
+| `SHADE_VIEWER_ROOT` | No | `$PROJECT_ROOT/viewer` | HTTP server root. Use the smallest directory containing the viewer and its imports. Noisemaker requires its repository root. The server exposes non-dotfiles within this root. |
 | `SHADE_VIEWER_PATH` | No | `/` | Path to viewer index.html within viewer root |
 | `SHADE_VIEWER_PORT` | No | `0` (auto) | HTTP server port (0 = OS-assigned to avoid conflicts) |
 | `SHADE_GLOBALS_PREFIX` | No | `__shade` | Window globals prefix (e.g., `__portable` → `__portableCanvasRenderer`) |
 | `SHADE_BACKEND` | No | `webgl2` | Default rendering backend |
 | `SHADE_MAX_BROWSERS` | No | `1` | Max concurrent browser sessions (pipelining) |
-| `SHADE_HEADLESS` | No | `1` (headless) | Set `0` to run headed; headless is the only mode that works with no display |
+| `SHADE_HEADLESS` | No | `1` (headless) | Set `0` to show the browser window. Headless mode is required when no display is available. |
 | `SHADE_TIMEOUT_MS` | No | `120000` | Ceiling for every browser/page operation (`session.timeoutMs`) |
-| `SHADE_AI_TIMEOUT_MS` | No | `120000` | Ceiling for one AI provider request; retries capped at 1 |
+| `SHADE_AI_TIMEOUT_MS` | No | `120000` | Maximum duration of one AI provider request. The retry limit is 1. |
 | `SHADE_AI_MODEL` | No | provider default | Overrides the model for AI-powered tools |
 
 ## Consumer Projects
@@ -88,16 +92,15 @@ shade-mcp is configured entirely via env vars. Each consumer project points its 
 - Imports `checkEffectStructure` directly from vendored harness (library mode, no MCP)
 - Test harness: `shaders/tests/test-harness.js --structure` runs structure checks including name collision detection
 - Structure-only mode: `--structure-only --effects "*/*"` runs all on-disk checks without a browser
-- Vendor copy must be updated manually when shade-mcp changes
+- Update the vendor copy manually when shade-mcp changes
 
 ### portable (`../portable`)
 - Vendors full `dist/` via `pull-shade-mcp` script (clones from GitHub, builds, copies)
 - Uses shade-mcp as MCP server and as library (harness imports)
 - Gets name collision detection automatically on next `pull-shade-mcp` run
-- Consumer contract: apps ingesting portable effect JSON MUST wrap the
-  effect data in a real `Effect` instance (via `new Effect({...})`) before
-  registering it with the runtime. Plain object literals miss
-  `Effect.prototype.asyncInit` and crash the pipeline's lifecycle guard.
+- Consumer contract: apps that read portable effect JSON MUST wrap the effect data in a real `Effect` instance.
+  Use `new Effect({...})` before registering the effect with the runtime.
+  Plain object literals lack `Effect.prototype.asyncInit` and crash the pipeline's lifecycle guard.
   See `portable/docs/FORMAT.md` → Registration → Consumer Contract.
 
 ### shade (`../shade`)
@@ -105,8 +108,12 @@ shade-mcp is configured entirely via env vars. Each consumer project points its 
 - In-app agent in `server/tools/index.js` implements tool definitions as plain objects
 - `server/routes/chat.js` calls `executeToolCall()` directly (not via MCP protocol)
 - Currently uses: `search_effects`, `search_shader_source`, `search_shader_knowledge`, `analyze_effect`, `list_effects`
-- To add `checkEffectStructure` to shade's in-app agent: add tool definition to the `tools` array and implement `executeToolCall` case that calls the function from a vendored harness module
+- To add `checkEffectStructure` to shade's in-app agent, add its tool definition to the `tools` array.
+  Implement an `executeToolCall` case that calls the function from a vendored harness module.
 
 ## Viewer
 
-shade-mcp does not bundle a viewer. Consumers must provide one via `SHADE_VIEWER_ROOT` env var (or `viewerRoot` option in library mode). The viewer must expose window globals matching the configured prefix (default `__shade*`, customizable via `SHADE_GLOBALS_PREFIX`).
+shade-mcp does not include a viewer.
+Consumers must provide one through `SHADE_VIEWER_ROOT`, or through the `viewerRoot` option in library mode.
+The viewer must expose window globals that match the configured prefix.
+The default is `__shade*`. Set `SHADE_GLOBALS_PREFIX` to change the prefix.

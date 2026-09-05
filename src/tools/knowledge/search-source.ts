@@ -15,15 +15,15 @@ async function getGlslIndex(): Promise<GlslIndex> {
 }
 
 export const searchShaderSourceSchema = {
-  query: z.string().describe('Regex search pattern'),
-  context_lines: z.number().optional().default(5).describe('Lines of context around match'),
+  query: z.string().describe('Regular expression to search for'),
+  context_lines: z.number().optional().default(5).describe('Number of context lines around each match'),
   limit: z.number().optional().default(10).describe('Maximum results'),
 }
 
 export function registerSearchShaderSource(server: McpServer): void {
   server.tool(
     'searchShaderSource',
-    'Regex search through GLSL source code across all effects. Returns matching snippets with context.',
+    'Search GLSL source code across all effects with a regular expression. Return matching snippets with context.',
     searchShaderSourceSchema,
     async (args: any) => {
       const index = await getGlslIndex()
